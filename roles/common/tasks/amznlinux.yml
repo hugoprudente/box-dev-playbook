@@ -1,0 +1,6 @@
+# roles/common/tasks/amzonlinux.yml
+- name: Install build tools
+  yum:
+    name: "@Development tools"
+    state: latest
+  become: yes

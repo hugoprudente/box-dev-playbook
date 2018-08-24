@@ -1,0 +1,245 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+
+  IAMUser:
+    Type: String
+    Default: hprudent
+    Description: IAM User that will own Cloud9
+
+  RepositoryOnePrefix:
+    Type: String
+    Default: code
+    Description: Where I do store code samples and examples
+
+  RepositoryTwoPrefix:
+    Type: String
+    Default: docs
+    Description: Where public documents like notes, latex, markdown stuffy
+
+  RepositoryThreePrefix:
+    Type: String
+    Default: samples
+    Description: Where I push my testings to trigger
+
+  AutomaticStopTimeMinutes:
+    Type: Number
+    Default: 60
+    Description: The number of minutes until the running instance is shut down after the environment has last been used
+
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: The ID of the public subnet (IGW) in Amazon Virtual Private Cloud (Amazon VPC) to use.
+
+  InstanceType:
+    Type: String
+    Default: m4.large
+    Description: Instance Type
+
+  VolumeSize:
+    Type: Number
+    Default: 500
+    Description: EBS GP2 Volume Size for the instance
+
+Resources:
+
+  RepositoryOne:
+    Type: "AWS::CodeCommit::Repository"
+    DeletionPolicy: Retain
+    Properties:
+      RepositoryName: !Ref RepositoryOnePrefix
+
+  RepositoryTwo:
+    Type: "AWS::CodeCommit::Repository"
+    DeletionPolicy: Retain
+    Properties:
+      RepositoryName: !Ref RepositoryTwoPrefix
+
+  RepositoryThree:
+    Type: "AWS::CodeCommit::Repository"
+    DeletionPolicy: Retain
+    Properties:
+      RepositoryName: !Ref RepositoryThreePrefix
+
+  RepositoryFour:
+    Type: "AWS::CodeCommit::Repository"
+    DeletionPolicy: Retain
+    Properties:
+      RepositoryName: !Ref RepositoryFourPrefix
+
+  Cloud9:
+    Type: "AWS::Cloud9::EnvironmentEC2"
+    Properties:
+      Repositories:
+        - PathComponent: !Sub "/${RepositoryOnePrefix}"
+          RepositoryUrl: !GetAtt RepositoryOne.CloneUrlHttp
+        - PathComponent: !Sub "/${RepositoryTwoPrefix}"
+          RepositoryUrl: !GetAtt RepositoryTwo.CloneUrlHttp
+        - PathComponent: !Sub "/${RepositoryThreePrefix}"
+          RepositoryUrl: !GetAtt RepositoryThree.CloneUrlHttp
+        - PathComponent: !Sub "/${RepositoryFourPrefix}"
+          RepositoryUrl: !GetAtt RepositoryFour.CloneUrlHttp
+      OwnerArn: !Sub "arn:aws:iam::${AWS::AccountId}:user/${IAMUser}"
+      Description: "Deployment all-in-one frugal box"
+      AutomaticStopTimeMinutes: 300
+      InstanceType: !Ref InstanceType
+      Name: !Sub ${IAMUser}
+      SubnetId: !Ref SubnetId
+
+  Cloud9SSMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+
+  Cloud9SSMInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref Cloud9SSMRole
+
+  VolumeResize:
+    DependsOn: Cloud9SSMInstanceProfile
+    Type: Custom::VolumeResize
+    DependsOn:
+      - VolumeResizeFunction
+    Properties:
+      ServiceToken:
+        "Fn::GetAtt": [ "VolumeResizeFunction",  "Arn" ]
+      Cloud9Id: !Ref Cloud9
+      Cloud9Name: !GetAtt Cloud9.Name
+      VolumeSize: !Ref VolumeSize
+      InstanceProfileArn: !GetAtt Cloud9SSMInstanceProfile.Arn
+      InstanceProfileName: !Ref Cloud9SSMInstanceProfile
+
+  VolumeResizeFunctionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeInstances
+                  - ec2:ModifyVolume
+                  - ec2:AssociateIamInstanceProfile
+                  - ec2:InstanceProfile
+                  - ssm:SendCommand
+                  - ec2:ReplaceIamInstanceProfileAssociation
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+                Resource: arn:aws:logs:*:*:*
+
+  VolumeResizeFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Handler: index.handler
+      Role:
+        'Fn::GetAtt':
+          - VolumeResizeFunctionRole
+          - Arn
+      Code:
+        ZipFile: |
+          import json
+          import cfnresponse
+          import boto3
+          import time
+
+          def handler(event, context):
+              print("REQUEST SENT: %s" % event)
+              client = boto3.client('ec2')
+              ssm_client = boto3.client('ssm')
+
+              responseData = {}
+              response_ec2 = {}
+              response_ebs = {}
+
+              if "Delete" in event["RequestType"]:
+                  cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
+
+              try:
+                cloud9Name = 'aws-cloud9-%s-%s' % (event["ResourceProperties"]["Cloud9Name"], event["ResourceProperties"]["Cloud9Id"])
+                response_ec2 = client.describe_instances(
+                            Filters=[
+                                {
+                                    'Name': 'tag:Name',
+                                    'Values': [
+                                      cloud9Name,
+                                    ]
+                                },
+                            ])
+
+                print(response_ec2)
+
+                profile = client.associate_iam_instance_profile(
+                      IamInstanceProfile={
+                          'Arn': event["ResourceProperties"]["InstanceProfileArn"],
+                          'Name': event["ResourceProperties"]["InstanceProfileName"]
+                      },
+                      InstanceId=response_ec2['Reservations'][-1]['Instances'][-1]['InstanceId']
+                  )
+
+                print(profile)
+
+                response_ebs = client.modify_volume(
+                    VolumeId=response_ec2['Reservations'][-1]['Instances'][-1]['BlockDeviceMappings'][-1]['Ebs']['VolumeId'],
+                    Size=int(event["ResourceProperties"]["VolumeSize"])
+                  )
+
+                time.sleep(240)
+                print(response_ebs)
+
+                response = ssm_client.send_command(
+                    InstanceIds=[
+                        response_ec2['Reservations'][-1]['Instances'][-1]['InstanceId']
+                    ],
+                    DocumentName='AWS-RunShellScript',
+                    Comment='EBS Resize Command',
+                    Parameters={
+                        'commands': [
+                            'sleep 900 & growpart /dev/xvda 1 & resize2fs /dev/xvda1'
+                        ]
+                    }
+                )
+                print(response)
+
+                cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
+
+              except Exception as e:
+                  print(e)
+                  cfnresponse.send(event, context, cfnresponse.FAILED, responseData)
+
+      Runtime: python2.7
+      Timeout: '300'
+
+Outputs:
+  Cloud9URL:
+    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/cloud9/ide/${Cloud9}"
+

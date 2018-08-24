@@ -1,0 +1,5 @@
+{
+  "cmd" : ["dotnet", "run", "$args"],
+  "working_dir": "$file",
+  "info" : "Running..."
+}

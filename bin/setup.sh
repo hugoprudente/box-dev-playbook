@@ -1,6 +1,7 @@
 #!/bin/bash -e
-exec > >(tee /var/log/ansible.log|logger -t ansible -s 2>/dev/console) 2>&1
+# exec > >(tee /tmp/ansible.log|logger -t ansible -s 2>/dev/console) 2>&1
 
 # Install Ansible on the Cloud9 Box
-/usr/local/bin/pip install --upgrade ansible
+python3 -m pip install --upgrade pip
+python3 -m pip install ansible --user
 ansible-playbook cloud9.yml

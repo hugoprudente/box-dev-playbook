@@ -1,46 +1,32 @@
 ---
-AWSTemplateFormatVersion: 2010-09-09
+AWSTemplateFormatVersion: '2010-09-09'
+Description: '02.Cloud9++ - Cloud9 Template'
 
 Parameters:
-
+  PublicSubnet:
+    Type: AWS::EC2::Subnet::Id
   IAMUser:
     Type: String
-    Default: hprudent
-    Description: IAM User that will own Cloud9
-
   RepositoryOnePrefix:
     Type: String
     Default: code
-    Description: Where I do store code samples and examples
-
   RepositoryTwoPrefix:
     Type: String
-    Default: docs
-    Description: Where public documents like notes, latex, markdown stuffy
-
-  RepositoryThreePrefix:
-    Type: String
     Default: samples
-    Description: Where I push my testings to trigger
-
   AutomaticStopTimeMinutes:
     Type: Number
-    Default: 60
-    Description: The number of minutes until the running instance is shut down after the environment has last been used
-
-  SubnetId:
-    Type: AWS::EC2::Subnet::Id
-    Description: The ID of the public subnet (IGW) in Amazon Virtual Private Cloud (Amazon VPC) to use.
-
+    Default: 240
   InstanceType:
     Type: String
     Default: m4.large
-    Description: Instance Type
-
   VolumeSize:
     Type: Number
     Default: 500
-    Description: EBS GP2 Volume Size for the instance
+  Tag:
+    Description: Name used to identified  values. Defaults to
+    Type: String
+    MaxLength: 16
+    MinLength: 4
 
 Resources:
 
@@ -48,25 +34,13 @@ Resources:
     Type: "AWS::CodeCommit::Repository"
     DeletionPolicy: Retain
     Properties:
-      RepositoryName: !Ref RepositoryOnePrefix
+      RepositoryName: !Sub '${Tag}-${RepositoryOnePrefix}'
 
   RepositoryTwo:
     Type: "AWS::CodeCommit::Repository"
     DeletionPolicy: Retain
     Properties:
-      RepositoryName: !Ref RepositoryTwoPrefix
-
-  RepositoryThree:
-    Type: "AWS::CodeCommit::Repository"
-    DeletionPolicy: Retain
-    Properties:
-      RepositoryName: !Ref RepositoryThreePrefix
-
-  RepositoryFour:
-    Type: "AWS::CodeCommit::Repository"
-    DeletionPolicy: Retain
-    Properties:
-      RepositoryName: !Ref RepositoryFourPrefix
+      RepositoryName: !Sub '${Tag}-${RepositoryTwoPrefix}'
 
   Cloud9:
     Type: "AWS::Cloud9::EnvironmentEC2"
@@ -76,16 +50,12 @@ Resources:
           RepositoryUrl: !GetAtt RepositoryOne.CloneUrlHttp
         - PathComponent: !Sub "/${RepositoryTwoPrefix}"
           RepositoryUrl: !GetAtt RepositoryTwo.CloneUrlHttp
-        - PathComponent: !Sub "/${RepositoryThreePrefix}"
-          RepositoryUrl: !GetAtt RepositoryThree.CloneUrlHttp
-        - PathComponent: !Sub "/${RepositoryFourPrefix}"
-          RepositoryUrl: !GetAtt RepositoryFour.CloneUrlHttp
       OwnerArn: !Sub "arn:aws:iam::${AWS::AccountId}:user/${IAMUser}"
-      Description: "Deployment all-in-one frugal box"
+      Description: "Cloud9++ DevOps Box"
       AutomaticStopTimeMinutes: 300
       InstanceType: !Ref InstanceType
-      Name: !Sub ${IAMUser}
-      SubnetId: !Ref SubnetId
+      Name: !Sub ${Tag}
+      SubnetId: !Ref PublicSubnet
 
   Cloud9SSMRole:
     Type: AWS::IAM::Role
@@ -173,7 +143,6 @@ Resources:
           import time
 
           def handler(event, context):
-              print("REQUEST SENT: %s" % event)
               client = boto3.client('ec2')
               ssm_client = boto3.client('ssm')
 
@@ -196,8 +165,6 @@ Resources:
                                 },
                             ])
 
-                print(response_ec2)
-
                 profile = client.associate_iam_instance_profile(
                       IamInstanceProfile={
                           'Arn': event["ResourceProperties"]["InstanceProfileArn"],
@@ -206,7 +173,6 @@ Resources:
                       InstanceId=response_ec2['Reservations'][-1]['Instances'][-1]['InstanceId']
                   )
 
-                print(profile)
 
                 response_ebs = client.modify_volume(
                     VolumeId=response_ec2['Reservations'][-1]['Instances'][-1]['BlockDeviceMappings'][-1]['Ebs']['VolumeId'],
@@ -214,7 +180,6 @@ Resources:
                   )
 
                 time.sleep(240)
-                print(response_ebs)
 
                 response = ssm_client.send_command(
                     InstanceIds=[
@@ -228,7 +193,6 @@ Resources:
                         ]
                     }
                 )
-                print(response)
 
                 cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
 
@@ -236,8 +200,8 @@ Resources:
                   print(e)
                   cfnresponse.send(event, context, cfnresponse.FAILED, responseData)
 
-      Runtime: python2.7
-      Timeout: '300'
+      Runtime: python3.7
+      Timeout: '600'
 
 Outputs:
   Cloud9URL:

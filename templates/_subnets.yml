@@ -1,0 +1,117 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: '01.00.Cloud9++ - Subnet Individual Template'
+Parameters:
+  Tag:
+    Description: 'name used to identified Vulcan values. defaults Vulcan'
+    Type: String
+    Default: Vulcan
+    MaxLength: 16
+    MinLength: 4
+  VPC:
+    Type: String
+  VPCIpv6CidrBlocks:
+    Type: String
+  CidrPublicSubnet:
+    Type: String
+  CidrPublicIpv6:
+    Type: String
+  CidrPrivateSubnet:
+    Type: String
+  RouteTablePublic:
+    Type: String
+  RouteTablePrivate:
+    Type: String
+  NetworkAclPublic:
+    Type: String
+  NetworkAclPrivate:
+    Type: String
+  AZ:
+    Type: String
+    AllowedValues:
+      - "A"
+      - "B"
+      - "C"
+      - "D"
+      - "E"
+      - "F"
+      - "G"
+  EnableIPv6:
+    Type: String
+    Default: false
+    AllowedValues:
+      - false
+      - true
+
+Mappings:
+  AZPosition:
+     default:
+      "A": 0
+      "B": 1
+      "C": 2
+      "D": 3
+      "E": 4
+      "F": 5
+      "G": 6
+
+Conditions:
+  ConfigureIPv6: !Equals [!Ref 'EnableIPv6', true]
+
+Resources:
+  DummySubnetResource:
+    # CloudFormation/latest/UserGuide/aws-properties-waitconditionhandle.html
+    Type: "AWS::CloudFormation::WaitConditionHandle"
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ !FindInMap [ AZPosition, "default", !Ref AZ], !GetAZs '' ]
+      CidrBlock: !Ref 'CidrPublicSubnet'
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref 'VPC'
+      Tags:
+      - Key: Name
+        Value: !Sub '${Tag} PublicSubnet ${AZ}'
+  PublicSubnetIPv6:
+    Condition: ConfigureIPv6
+    Type: AWS::EC2::SubnetCidrBlock
+    Properties:
+      SubnetId: !Ref 'PublicSubnet'
+      #Ipv6CidrBlock: !Join [ !FindInMap [ EnableAZ, !Ref "AWS::Region", !Ref AZ], [ !Select ['0', !Split ['00::/56', !Ref VPCIpv6CidrBlocks] ], '::/64' ] ]
+      Ipv6CidrBlock:
+        Fn::Join: ["", [ !Select ["0", !Split ["00::/56", !Ref VPCIpv6CidrBlocks ] ], !Ref CidrPublicIpv6,"::/64"] ]
+  PrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ !FindInMap [ AZPosition, "default", !Ref AZ], !GetAZs '' ]
+      CidrBlock: !Ref 'CidrPrivateSubnet'
+      VpcId: !Ref 'VPC'
+      Tags:
+      - Key: Name
+        Value: !Sub '${Tag} PrivateSubnet ${AZ}'
+  RouteTableAssociationPublic:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref 'PublicSubnet'
+      RouteTableId: !Ref 'RouteTablePublic'
+  RouteTableAssociationPrivateA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref 'PrivateSubnet'
+      RouteTableId: !Ref 'RouteTablePrivate'
+  SubnetNetworkAclAssociationPublic:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: !Ref 'PublicSubnet'
+      NetworkAclId: !Ref 'NetworkAclPublic'
+  SubnetNetworkAclAssociationPrivate:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: !Ref 'PrivateSubnet'
+      NetworkAclId: !Ref 'NetworkAclPrivate'
+Outputs:
+  PublicSubnet:
+    Description: "Public Subnet"
+    Value: !Ref PublicSubnet
+  PrivateSubnet:
+    Description: "PrivateSubnet"
+    Value: !Ref PrivateSubnet
+

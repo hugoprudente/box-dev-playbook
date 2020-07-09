@@ -1,0 +1,41 @@
+# tasks file for baseline
+- name: install git
+  apt:
+    name: git
+    state: latest
+  become: yes
+- name: install jq
+  apt:
+    name: jq
+    state: latest
+  become: yes
+- name: install zsh
+  when: zsh.enable is defined
+  apt:
+    name: zsh
+    state: latest
+  become: yes
+- name: install tmux
+  when: tmux.enable is defined
+  apt:
+    name: tmux
+    state: latest
+  become: yes
+- name: install htop
+  when: htop.enable is defined
+  apt:
+    name: htop
+    state: latest
+  become: yes
+- name: install screen
+  when: screen.enable
+  apt:
+    name: screen
+    state: latest
+  become: yes
+- name: install vim
+  when: vim.enable
+  apt:
+    name: vim
+    state: latest
+  become: yes

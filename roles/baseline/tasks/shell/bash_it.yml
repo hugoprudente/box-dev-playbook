@@ -1,10 +1,10 @@
 ---
 - name: detect Linux variables
-  import_tasks: linux_vars.yml
+  import_tasks: base/linux_vars.yml
   when: ansible_os_family != "Darwin"
 
 - name: detect Mac OS X variables
-  import_tasks: osx_vars.yml
+  import_tasks: base/osx_vars.yml
   when: ansible_os_family == "Darwin"
 
 - name: assert home directory is detected
@@ -48,6 +48,25 @@
     - { regexp: '^export BASH_IT=', line: 'export BASH_IT="$HOME/.bash_it"' }
     - { regexp: '^export BASH_IT_THEME=', line: 'export BASH_IT_THEME={{ theme }}' }
     - { regexp: '^source \$BASH_IT', line: 'source $BASH_IT/bash_it.sh' }
+- name: install bash_it on .bashrc for {{ user }}
+  lineinfile:
+    dest: "{{ user_home }}/.bashrc"
+    create: yes
+    owner: "{{ user }}"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+    - { regexp: '^export BASH_IT=', line: 'export BASH_IT="$HOME/.bash_it"' }
+    - { regexp: '^export BASH_IT_THEME=', line: 'export BASH_IT_THEME={{ theme }}' }
+    - { regexp: '^source \$BASH_IT', line: 'source $BASH_IT/bash_it.sh' }
+- name: install extra bash_it configs on .bashrc for {{ user }}
+  lineinfile:
+    dest: "{{ user_home }}/.bashrc"
+    create: yes
+    owner: "{{ user }}"
+    line: "{{ item.line }}"
+  with_items:
+    - { line: 'export PATH="$PATH:~/bin:~/.local/bin"' }
 
 - name: install bash_it plugins for {{ user }}
   command: "/bin/bash -i -l -c \"bash-it enable plugin {{ plugins|join(' ') }}\""

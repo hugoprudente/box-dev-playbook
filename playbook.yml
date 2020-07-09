@@ -2,21 +2,31 @@
 - hosts: all
   gather_facts: yes
   vars:
+    bash_it:
+      enable: True
+    tmux:
+      enable: True
+    vim:
+        enable: True
+    htop:
+        enable: True
+    screen:
+      enable: True
+    zsh:
+      enable: False
     kubernetes:
-      enable: true
+      enable: True
     docker:
-      enable: true
+      enable: True
 
-
-
-      # aws:
-    #   enable: false
+    # aws:
+    #   enable: False
     # hashicorp:
-    #   enable: true
+    #   enable: True
     # cloud9:
-    #   enable: true
+    #   enable: True
     # vscode:
-    #   enable: true
+    #   enable: True
     # language_python:
     #   enable: tasdrue
 

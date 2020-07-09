@@ -4,18 +4,14 @@
 #     name: "@Development tools"
 #     state: latest
 #   become: yes
-  
 - name: install jq
   yum:
     name: jq
     state: latest
   become: yes
-  vars:
-    ansible_python_interpreter: /usr/local/bin/python3.8 
 - name: install zsh
+  when: zsh.enable is defined
   yum:
     name: zsh
     state: latest
   become: yes
-  vars:
-    ansible_python_interpreter: /usr/local/bin/python3.8 

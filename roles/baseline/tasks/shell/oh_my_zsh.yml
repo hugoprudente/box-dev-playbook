@@ -1,10 +1,10 @@
 ---
 - name: detect Linux variables
-  import_tasks: linux_vars.yml
+  import_tasks: base/linux_vars.yml
   when: ansible_os_family != "Darwin"
 
 - name: detect Mac OS X variables
-  import_tasks: osx_vars.yml
+  import_tasks: base/osx_vars.yml
   when: ansible_os_family == "Darwin"
 
 - name: assert home directory is detected
@@ -13,23 +13,23 @@
 - name: assert current shell is detected
   assert: { that: user_shell | length > 0 }
 
-- name: clone bash_it for {{ user }}
+- name: clone oh_my_zsh for {{ user }}
   git:
     repo: "{{ repository }}"
-    dest: "{{ user_home }}/.bash_it"
+    dest: "{{ user_home }}/.oh_my_zsh"
     version: "{{ version }}"
   become: yes
   become_user: "{{ user }}"
 
-- name: .bash_profile loads .bashrc for {{ user }}
-  blockinfile:
-    dest: "{{ user_home }}/.bash_profile"
-    create: yes
-    owner: "{{ user }}"
-    block: |
-      if [ -f ~/.bashrc ]; then
-        source ~/.bashrc
-      fi
+# - name: .bash_profile loads .bashrc for {{ user }}
+#   blockinfile:
+#     dest: "{{ user_home }}/.bash_profile"
+#     create: yes
+#     owner: "{{ user }}"
+#     block: |
+#       if [ -f ~/.bashrc ]; then
+#         source ~/.bashrc
+#       fi
 
 - name: change shell to bash for {{ user }}
   command: "chsh -s /bin/bash {{ user }}"
@@ -37,7 +37,7 @@
   become_user: root
   when: user_shell != "/bin/bash"
 
-- name: install bash_it on .bashrc for {{ user }}
+- name: install oh_my_zsh on .bashrc for {{ user }}
   lineinfile:
     dest: "{{ user_home }}/.bashrc"
     create: yes
@@ -45,11 +45,11 @@
     regexp: "{{ item.regexp }}"
     line: "{{ item.line }}"
   with_items:
-    - { regexp: '^export BASH_IT=', line: 'export BASH_IT="$HOME/.bash_it"' }
-    - { regexp: '^export BASH_IT_THEME=', line: 'export BASH_IT_THEME={{ theme }}' }
-    - { regexp: '^source \$BASH_IT', line: 'source $BASH_IT/bash_it.sh' }
+    - { regexp: '^export oh_my_zsh=', line: 'export oh_my_zsh="$HOME/.oh_my_zsh"' }
+    - { regexp: '^export oh_my_zsh_THEME=', line: 'export oh_my_zsh_THEME={{ theme }}' }
+    - { regexp: '^source \$oh_my_zsh', line: 'source $oh_my_zsh/oh_my_zsh.sh' }
 
-- name: install bash_it plugins for {{ user }}
+- name: install oh_my_zsh plugins for {{ user }}
   command: "/bin/bash -i -l -c \"bash-it enable plugin {{ plugins|join(' ') }}\""
   become: yes
   become_user: "{{ user }}"
@@ -57,7 +57,7 @@
   register: plugins_result
   changed_when: "plugins_result.stdout_lines | reject('match', '.* is already enabled.') | list | length > 0"
 
-- name: install bash_it aliases for {{ user }}
+- name: install oh_my_zsh aliases for {{ user }}
   command: "/bin/bash -i -l -c \"bash-it enable alias {{ aliases|join(' ') }}\""
   become: yes
   become_user: "{{ user }}"
@@ -65,7 +65,7 @@
   register: aliases_result
   changed_when: "aliases_result.stdout_lines | reject('match', '.* is already enabled.') | list | length > 0"
 
-- name: install bash_it completions for {{ user }}
+- name: install oh_my_zsh completions for {{ user }}
   command: "/bin/bash -i -l -c \"bash-it enable completion {{ completions|join(' ') }}\""
   become: yes
   become_user: "{{ user }}"

@@ -1,24 +1,12 @@
 ---
+users: ubuntu
+
 enable_packages:
-    - name: python
+    - name: python3
 
+# enable_kubernetes:
+#     kubernetes_version: v1.18.0
 
-
-# Versions
-kubernetes_version: v1.18.0
-# docker_version: 
-docker_composer_version: 1.25.5
-
-# locale: en_US.UTF-8
-# timezone: Asia/Tokyo
-# language: en_US:en
-# linuxbrew_packages:
-#   - name: ncurses
-#   - name: readline
-#   - name: git
-#   - name: zsh
-#   - name: vim
-#     install_options: with-lua,with-luajit
-#   - name: z
-#   - name: rbenv
-#   - name: peco
+# enable_docker:
+#     docker_compose
+#     docker_composer_version: 1.25.5

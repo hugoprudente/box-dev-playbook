@@ -1,0 +1,9 @@
+---
+# tasks file for hashcorp
+
+
+- name: install packer
+  unarchive:
+    src: https://releases.hashicorp.com/packer/1.5.1/packer_1.5.1_linux_amd64.zip
+    dest: /home/ec2-user/bin
+    remote_src: yes    

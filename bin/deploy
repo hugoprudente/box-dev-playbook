@@ -3,7 +3,7 @@ set -o errexit -o xtrace
 
 REGION=eu-west-1
 NAME=cloud9pp
-IAMUSER=$USER
+IAMUSER=hprudent
 
 
 BUCKET=$NAME-$REGION-$IAMUSER

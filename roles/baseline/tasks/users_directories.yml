@@ -1,0 +1,12 @@
+#roles/common/tasks/directories.yml
+- name: creating environment
+  file:
+    path: "/home/{{ user }}/environment/"
+    state: directory
+    owner: "{{ user }}"
+    group: "{{ user }}"
+- file:
+    path: "/home/{{ user }}/bin"
+    state: directory
+    owner: "{{ user }}"
+    group: "{{ user }}"

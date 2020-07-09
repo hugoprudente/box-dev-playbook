@@ -1,0 +1,10 @@
+[localhost]
+127.0.0.1 ansible_python_interpreter=/usr/local/bin/python3.8 ansible_connection=local
+
+#[tests]
+#10.0.94.245
+#10.0.93.163
+#10.0.82.234
+#10.0.90.78
+#10.0.87.125
+#10.0.85.150

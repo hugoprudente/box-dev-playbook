@@ -1,0 +1,29 @@
+---
+- hosts: all
+  gather_facts: yes
+  vars:
+    kubernetes:
+      enable: true
+    docker:
+      enable: true
+
+
+
+      # aws:
+    #   enable: false
+    # hashicorp:
+    #   enable: true
+    # cloud9:
+    #   enable: true
+    # vscode:
+    #   enable: true
+    # language_python:
+    #   enable: tasdrue
+
+  roles:
+  - baseline
+  # - docker
+  # - kubernetes
+  #   #  - baseline
+  #   #  - aws
+  #   #  - hashicorp

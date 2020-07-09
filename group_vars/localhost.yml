@@ -1,0 +1,24 @@
+---
+enable_packages:
+    - name: python
+
+
+
+# Versions
+kubernetes_version: v1.18.0
+# docker_version: 
+docker_composer_version: 1.25.5
+
+# locale: en_US.UTF-8
+# timezone: Asia/Tokyo
+# language: en_US:en
+# linuxbrew_packages:
+#   - name: ncurses
+#   - name: readline
+#   - name: git
+#   - name: zsh
+#   - name: vim
+#     install_options: with-lua,with-luajit
+#   - name: z
+#   - name: rbenv
+#   - name: peco

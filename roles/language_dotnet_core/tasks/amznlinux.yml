@@ -1,6 +1,0 @@
-# roles/common/tasks/amzonlinux.yml
-- name: installing dependencies
-  yum:
-    name: "libunwind"
-    state: latest
-  become: yes

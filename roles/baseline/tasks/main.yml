@@ -1,0 +1,18 @@
+---
+# tasks file for baseline
+- import_tasks: amznlinux.yml
+  when: ansible_os_family|lower == 'redhat'
+
+- import_tasks: users_directories.yml
+
+# - import_tasks: bash_it.yml
+#   vars:  
+#     user: ec2-user
+#     aliases:
+#     - general
+#     - ansible
+#     plugins:
+#     - history
+#     completions:
+#     - git
+  

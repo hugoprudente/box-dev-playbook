@@ -1,0 +1,66 @@
+---
+# tasks file for kubernetes
+
+- name: install kubectx + kubens
+  become: yes
+  block:
+    - name: "fetching kubectx + kubens"
+      git:
+        repo: https://github.com/ahmetb/kubectx.git
+        dest: /opt/kubectx
+        depth: 1
+        force: true
+#     - name: "configuring kubectx + kubens"
+#       become_user: "{{ ansible_user_id }}"
+#       file:
+#         src: "/opt/kubectx"
+#         dest: "{{ ansible_user_dir }}/.kubectx"
+#         state: link
+#     - name: "enble zsh_completion with oh_my_zsh"
+#       when: ansible_distribution == 'MacOSX'
+#       become_user: "{{ ansible_user_id }}"
+#       file:
+#         src: "/opt/kubectx/completion/{{ item.src }}"
+#         dest: "{{ ansible_user_dir }}/.oh-my-zsh/completions/{{ item.dest }}"
+#         state: link
+#       loop:
+#         - { src: "kubectx.zsh", dest: "_kubectx.zsh" }
+#         - { src: "kubens.zsh", dest: "_kubens.zsh" }
+#     - name: "enable bash_completion with bash_it"
+#       when: ansible_system == 'Linux'
+#       become_user: "{{ ansible_user_id }}"
+#       file:
+#         src: "/opt/kubectx/completion/{{ item.src }}"
+#         dest: "{{ ansible_user_dir }}/.bash_it/completion/{{ item.dest }}"
+#         state: link
+#       loop:
+#         - { src: "kubectx.bash", dest: "kubectx.completion.bash" }
+#         - { src: "kubens.bash", dest: "kubens.completion.bash" }
+
+# - name: install, configure kubectl
+#   block:
+#     - name: "fetching latest kubectl for OSX"
+#       become: yes
+#       when: ansible_distribution == 'MacOSX'
+#       get_url:
+#         url: "https://storage.googleapis.com/kubernetes-release/release/{{ kubernetes_version }}/bin/darwin/amd64/kubectl"
+#         dest: "/usr/local/bin/kubectl"
+#         mode: '0755'
+  
+#     - name: "fetching latest kubectl for Linux"
+#       become: yes
+#       get_url:
+#         url: "https://storage.googleapis.com/kubernetes-release/release/{{ kubernetes_version }}/bin/linux/amd64/kubectl"
+#         dest: "/usr/local/bin/kubectl"
+#         mode: '0755'
+#       when: ansible_system == 'Linux'
+
+#     # - name: "configure alias for bash_it"
+#     #   when: ansible_system == 'Linux'
+# 		# 	become_user: "{{ ansible_user_id }}"
+# 		#   lineinfile:
+# 		#     path: "{{ ansible_user_dir }}/.bash_it/alisases/custom.aliases.bash"
+#     # 		line: "alias k=kubectl"
+# 		#     create: yes
+
+

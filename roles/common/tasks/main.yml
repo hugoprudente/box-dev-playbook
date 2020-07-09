@@ -1,7 +1,0 @@
-# roles/common/tasks/main.yml
-- import_tasks: amznlinux.yml
-  when: ansible_os_family|lower == 'redhat'
-
-- import_tasks: directories.yml
-
-

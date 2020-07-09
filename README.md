@@ -1,4 +1,6 @@
-# Cloud9++
+# All Might Box
+
+Used to build a machine capacle of 1 click jump in in any
 
 An extra customized Cloud9 Box for DevOps and general study!
 
@@ -13,7 +15,7 @@ An extra customized Cloud9 Box for DevOps and general study!
 This will create an VPC with *n* public, *n* private subnets with Cloud9.
 
 ```bash
-$git clone https://github.com/hugoprudente/cloud9-plusplus.git
+$git --depth=1 clone https://github.com/hugoprudente/cloud9-plusplus.git
 ```
 
 Configure the *REGION*, *NAME*, and *IAMUSER* on the **bin/deploy**, file to match your AWS configurations.
@@ -22,6 +24,7 @@ Configure the *REGION*, *NAME*, and *IAMUSER* on the **bin/deploy**, file to mat
 REGION=eu-west-1
 NAME=cloud9pp
 IAMUSER=$USER
+
 ```
 
 Deploy it!

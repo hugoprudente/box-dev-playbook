@@ -1,0 +1,21 @@
+# # tasks file for baseline
+# - name: install build tools
+#   yum:
+#     name: "@Development tools"
+#     state: latest
+#   become: yes
+  
+- name: install jq
+  yum:
+    name: jq
+    state: latest
+  become: yes
+  vars:
+    ansible_python_interpreter: /usr/local/bin/python3.8 
+- name: install zsh
+  yum:
+    name: zsh
+    state: latest
+  become: yes
+  vars:
+    ansible_python_interpreter: /usr/local/bin/python3.8 

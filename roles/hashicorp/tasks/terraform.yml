@@ -1,6 +1,0 @@
-# Task for Terraform
-- name: install terraform
-  unarchive:
-    src: https://releases.hashicorp.com/terraform/0.12.19/terraform_0.12.19_linux_amd64.zip
-    dest: /home/ec2-user/bin
-    remote_src: yes

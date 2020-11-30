@@ -1,62 +1,51 @@
-# All Might Box
+# Sys / Dev / Ops Development Ansible Playbook
 
-This is the Ansible Roles that I use to configure my Developer, SysAdmin & DevOps box
+[![CI][badge-gh-actions]][link-gh-actions]
 
-## Why?
-* From: Everywhere
-* With: Vim / Vim Support
-* And: Any Device
+This playbook installs and configures most of the software I use on my workstations for development, sysadmin, SRE, DevOps and Fun!
 
-## Deploy
+Totally inspired by [mac-dev-playbook](https://github.com/geerlingguy/mac-dev-playbook) by Geerlingguy!
 
-```bash
-$sudo apt-get install python3 python3-pip
-```
+## Installation
 
-### Localhost
+### OSX Only
 
-```bash
-$git --depth=1 clone https://github.com/hugoprudente/all-might-box.git
-```
+1. Ensure Apple's command line tools are installed (`xcode-select --install` to launch the installer).
+1. Continue with the steps for Linux and Windows (WSL)
 
-**Install Ansible**
+### Linux & Windows (WSL)
+1. [Install Ansible](http://docs.ansible.com/intro_installation.html).
+1. Clone this repository to your local drive.
+1. Run `$ ansible-galaxy install -r requirements.yml` inside this directory to install required Ansible roles.
+1. Run `ansible-playbook main.yml -i inventory --ask-become-pass` inside this directory. Enter your account password when prompted.
 
-Using the [official documentation](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#) install Ansible.
+> Note: If some Homebrew commands fail, you might need to agree to Xcode's license or fix some other Brew issue. Run `brew doctor` to see if this is the case.
 
-**Run the playbook**
+### Running a specific set of tagged tasks
 
-```bash
-$ansible-playbook --connection=local --inventory 127.0.0.1, playbook.yml --extra-vars "user=$USER"
-```
+You can filter which part of the provisioning process to run by specifying a set of tags using `ansible-playbook`'s `--tags` flag. The tags available are `dotfiles`, `homebrew`.
 
-**Configuration**
+    ansible-playbook main.yml -i inventory -K --tags "dotfiles,homebrew"
 
-### Cloud
+## Overriding Defaults
 
-Configure the *REGION*, *NAME*, and *IAMUSER* on the **bin/deploy**, file to match your AWS configurations.
+Not everyone's development environment and preferred software configuration is the same.
 
-```
-REGION=eu-west-1
-NAME=cloud9pp
-IAMUSER=$USER
+So you can customize your one using as base `default.config.yml` by creating a `config.yml` file and changing to your taste!
 
-```
+## Included Applications / Configuration (Default)
 
-Deploy it!
+* [x] Ansible 
 
-```
-$bin/deploy
-```
+## Testing the Playbook
 
-This creates [Public (IGW)/Private(NAT)](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Scenario2.html) subnets using all available AZs on give region and create a Cloud9 with extra volume and 2 CodeCommit repositories.
+Use the [Mac OS X VirtualBox VM](https://github.com/geerlingguy/dev-osx-virtualbox-vm).
 
-## Extra Setup
+Additionally, this project is [continuously tested on GitHub Actions' macOS infrastructure](https://github.com/hugoprudente/box-dev-playbook/actions?query=workflow%3ACI).
 
-TODO, add ansible playbooks
-]
+## Author
 
-## Development
+[Hugo Prudente](hugo.kenshin@gmail.com)
 
-```
-pip3 install ansible-lint
-```
+[badge-gh-actions]: https://github.com/hugoprudente/box-dev-playbook/workflows/CI/badge.svg?event=push
+[link-gh-actions]: https://github.com/hugoprudente/box-dev-playbook/actions?query=workflow%3ACI

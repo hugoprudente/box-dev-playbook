@@ -1,4 +1,0 @@
-{
-  "cmd" : ["dotnet", "build"],
-  "info" : "Building..."
-}

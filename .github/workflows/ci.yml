@@ -37,27 +37,35 @@ jobs:
       matrix:
         os:
           - macos-10.15
+          - ubuntu-latest
 
     steps:
       - name: Check out the codebase.
         uses: actions/checkout@v2
 
       - name: Uninstall GitHub Actions' built-in Homebrew.
+        if: ${{ matrix.os == 'macos-10.15' }}
         run: tests/uninstall-homebrew.sh
 
       - name: Uninstall GitHub Actions' built-in browser installs.
+        if: ${{ matrix.os == 'macos-10.15' }}
         run: |
           sudo rm -rf /Applications/Firefox.app
           sudo rm -rf /Applications/Google\ Chrome.app
 
       - name: Install test dependencies.
+        if: ${{ matrix.os == 'macos-10.15' }}
         run: sudo pip3 install ansible
+
+      - name: Install test dependencies.
+        if: ${{ matrix.os == 'macos-10.15' }}
+        run: pip3 install ansible
 
       - name: Set up the test environment.
         run: |
-          cp tests/ansible.cfg ./ansible.cfg
-          cp tests/inventory ./inventory
-          cp tests/config.yml ./config.yml
+          cp -v tests/ansible.cfg ./ansible.cfg
+          cp -v tests/inventory ./inventory
+          cp -v tests/config.yml ./config.yml
           ansible-galaxy install -r requirements.yml -p ./roles
 
       - name: Test the playbook's syntax.

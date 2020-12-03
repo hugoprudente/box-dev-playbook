@@ -21,6 +21,11 @@ homebrew_taps:
   - homebrew/core
   - homebrew/cask
 
+homebrew_installed_packages:
+  - pv
+  - bat
+  - ripgrep
+
 # Kubernetes
 configure_kubernetes: true
 kubernetes_installed_packages:

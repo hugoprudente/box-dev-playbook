@@ -55,17 +55,18 @@ jobs:
 
       - name: Install test dependencies.
         if: ${{ matrix.os == 'macos-10.15' }}
-        run: sudo pip3 install ansible
+        run: sudo pip3 install ansible ansible-galaxy
 
       - name: Install test dependencies.
         if: ${{ matrix.os == 'macos-10.15' }}
-        run: pip3 install ansible
+        run: pip3 install ansible ansible-galaxy
 
       - name: Set up the test environment.
         run: |
           cp -v tests/ansible.cfg ./ansible.cfg
           cp -v tests/inventory ./inventory
-          cp -v tests/config.yml ./config.yml
+          ls -lah tests/
+          # cp -v tests/config.yml ./config.yml
           ansible-galaxy install -r requirements.yml -p ./roles
 
       - name: Test the playbook's syntax.

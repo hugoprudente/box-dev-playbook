@@ -3,5 +3,27 @@ downloads: ~/.ansible-downloads/
 
 configure_dotfiles: true
 configure_terminal: true
+dotfiles_repo: https://github.com/hugoprudente/dotfiles.git
+dotfiles_repo_accept_hostkey: true
+dotfiles_repo_local_destination: ~/personal/dotfiles
+dotfiles_files:
+  - orig: oh-my-zsh/zshrc
+    dest: .zshrc
+  - orig: nvim
+    dest: .config/nvim
+  - orig: tmux/tmux.conf
+    dest: .tmux.conf
+  - orig: tmux/tmux.conf.local
+    dest: .tmux.conf.local
 
+# Homebrew
+homebrew_taps:
+  - homebrew/core
+  - homebrew/cask
 
+# Kubernetes
+configure_kubernetes: true
+kubernetes_installed_packages:
+  - kubectx
+  - helm
+  - kubectl

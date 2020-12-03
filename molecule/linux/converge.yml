@@ -1,7 +1,0 @@
----
-- name: Converge
-  hosts: all
-  tasks:
-    - name: "Include box-dev-playbook"
-      include_role:
-        name: "box-dev-playbook"

@@ -13,9 +13,11 @@
   roles:
     - role: geerlingguy.homebrew
       tags: ['homebrew']
-    - role: geerlingguy.dotfiles
+    - role: dotfiles
       when: configure_dotfiles
       tags: ['dotfiles']
-
+    - role: kubernetes
+      when: configure_kubernetes
+      tags: ['kubernetes', 'containers']
   tasks:
     - include_tasks: tasks/ansible-setup.yml

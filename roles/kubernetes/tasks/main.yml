@@ -1,0 +1,9 @@
+---
+- name: Ensure configured homebrew packages are installed.
+  homebrew:
+    name: "{{ item.name | default(item) }}"
+    install_options: "{{ item.install_options | default(omit) }}"
+    state: present
+  loop: "{{ kubernetes_installed_packages }}"
+  notify:
+    - Clear homebrew cache

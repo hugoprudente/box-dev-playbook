@@ -1,0 +1,5 @@
+---
+kubernetes_installed_packages:
+  - kubectx
+  - kubectl
+  - helm

@@ -25,7 +25,8 @@ Totally inspired by [mac-dev-playbook](https://github.com/geerlingguy/mac-dev-pl
 
 Due to WSL mount the */home/user* as */mnt/c* you will face **world writable** directory issue, to fix it just export the ANSIBLE_CONFIG environment variable.
 
-;
+```
+export ANSIBLE_CONFIG=`pwd`/ansible.cfg
 ```
 
 ### Running a specific set of tagged tasks
@@ -49,6 +50,17 @@ So you can customize your one using as base `default.config.yml` by creating a `
 Use the [Mac OS X VirtualBox VM](https://github.com/geerlingguy/dev-osx-virtualbox-vm).
 
 Additionally, this project is [continuously tested on GitHub Actions' macOS infrastructure](https://github.com/hugoprudente/box-dev-playbook/actions?query=workflow%3ACI).
+
+## Troubleshoot 
+
+### GPG Signed commits
+
+If you are using WSL you will need to export this, to type the passphrase of your commit or it will fail with `error: gpg failed to sign the data. fatal: failed to write commit object\`
+
+```
+export GPG_TTY=$(tty)
+```
+
 
 ## Author
 

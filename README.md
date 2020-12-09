@@ -21,6 +21,13 @@ Totally inspired by [mac-dev-playbook](https://github.com/geerlingguy/mac-dev-pl
 
 > Note: If some Homebrew commands fail, you might need to agree to Xcode's license or fix some other Brew issue. Run `brew doctor` to see if this is the case.
 
+### Running a specifi on Window (WSL)
+
+Due to WSL mount the */home/user* as */mnt/c* you will face **world writable** directory issue, to fix it just export the ANSIBLE_CONFIG environment variable.
+
+;
+```
+
 ### Running a specific set of tagged tasks
 
 You can filter which part of the provisioning process to run by specifying a set of tags using `ansible-playbook`'s `--tags` flag. The tags available are `dotfiles`, `homebrew`.

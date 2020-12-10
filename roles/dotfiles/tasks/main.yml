@@ -29,3 +29,33 @@
     state: link
   become: false
   with_items: "{{ dotfiles_files }}"
+
+- name: Configure Oh My Zsh
+  when: dotfiles_configure_ohmyzsh
+  block: 
+  - name: Cloning  oh-my-zsh
+    git:
+      repo=https://github.com/robbyrussell/oh-my-zsh
+      dest=~/.oh-my-zsh
+    register: cloning
+    become: no
+
+  - name: Creating new ~/.zshrc
+    copy:
+      src=~/.oh-my-zsh/templates/zshrc.zsh-template
+      dest=~/.zshrc
+    when: cloning|success
+    become: no
+
+- name: Configure Starship
+  when: dotfiles_configure_starship
+  block: 
+  - name: Fething Starship install script
+    get_url:
+      url: https://starship.rs/install.sh
+      dest: /tmp/
+      mode: 0755
+
+  - name: Execute Starship install script
+    shell: /tmp/install.sh -y
+    become: yes

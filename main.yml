@@ -12,7 +12,11 @@
 
   roles:
     - role: geerlingguy.homebrew
+      when: ansible_os_family == "Darwin"
       tags: ['homebrew']
+    - role: apt
+      when: ansible_os_family == "Debian"
+      tags: ['apt']
     - role: dotfiles
       when: configure_dotfiles
       tags: ['dotfiles']

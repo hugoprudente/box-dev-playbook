@@ -1,0 +1,8 @@
+- name: Ensure configured apt packages are installed.
+  become: yes
+  apt:
+    name: "{{ item.name | default(item) }}"
+    install_options: "{{ item.install_options | default(omit) }}"
+    state: present
+  loop: "{{ apt_installed_packages }}"
+  

@@ -10,7 +10,13 @@
     state: directory
   become: true
 
+- name: Check if /user/local/etc/ansible exists
+  register: ansible_dir
+  stat:
+    path: /usr/local/etc/ansible
+
 - name: Symlink /usr/local/etc/ansible to /etc/ansible.
+  when: ansible_dir.stat.exists and ansible_dir.stat.isdir 
   file:
     src: /etc/ansible
     path: /usr/local/etc/ansible

@@ -1,5 +1,6 @@
 ---
-- name: Ensure configured homebrew packages are installed.
+- name: (Darwin) Ensure configured kuberentes packages are installed.
+  when: ansible_os_family == "Darwin"
   homebrew:
     name: "{{ item.name | default(item) }}"
     install_options: "{{ item.install_options | default(omit) }}"
@@ -7,3 +8,28 @@
   loop: "{{ kubernetes_installed_packages }}"
   notify:
     - Clear homebrew cache
+
+- name: (Debian/Ubuntu) Ensure configured kuberentes packages are installed
+  when: ansible_os_family == "Debian"
+  block:
+  - name: Add an Apt signing key, uses whichever key is at the URL
+    become: yes
+    apt_key:
+      url: "{{ item.key | default(item) }}"
+      state: present
+    with_items: "{{ kuberentes_repository_packages }}"
+
+  - name: (Debian/Ubuntu) Ensure extra kubernetes repositores are installed
+    become: yes
+    apt_repository:
+      repo: "{{ item.repo | default(item) }}"
+      state: present
+      update_cache: yes
+    with_items: "{{ kuberentes_repository_packages }}"
+      
+  - name: (Debian/Ubuntu) Ensure configured kubernetes packages are installed
+    become: yes
+    apt:
+      name: "{{ item.name | default(item) }}"
+      state: present
+    loop: "{{ kubernetes_installed_packages }}"

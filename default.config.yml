@@ -15,6 +15,9 @@ dotfiles_files:
     dest: .tmux.conf
   - orig: tmux/tmux.conf.local
     dest: .tmux.conf.local
+dotfiles_configure_ohmyzsh: false
+dotfiles_configure_bashit: false
+dotfiles_configure_starship: true
 
 # Homebrew
 homebrew_taps:
@@ -26,9 +29,25 @@ homebrew_installed_packages:
   - bat
   - ripgrep
 
+apt_installed_packages:
+  - pv
+  - bat
+  - neovim
+  - htop
+  - tmux
+  - terminator
+  
 # Kubernetes
 configure_kubernetes: true
+kuberentes_repository_packages:
+  - repo: "deb https://apt.kubernetes.io/ kubernetes-xenial main"
+    key: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+  - repo: "deb https://baltocdn.com/helm/stable/debian/ all main"
+    key: https://baltocdn.com/helm/signing.asc
 kubernetes_installed_packages:
-  - kubectx
   - helm
   - kubectl
+
+# Containers
+configure_docker: false
+configure_podman: false

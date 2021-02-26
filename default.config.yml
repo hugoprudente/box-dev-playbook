@@ -7,8 +7,10 @@ dotfiles_repo: https://github.com/hugoprudente/dotfiles.git
 dotfiles_repo_accept_hostkey: true
 dotfiles_repo_local_destination: ~/personal/dotfiles
 dotfiles_files:
-  - orig: oh-my-zsh/zshrc
-    dest: .zshrc
+#  - orig: oh-my-zsh/zshrc
+#    dest: .zshrc
+  - orig: bashrc
+    dest: .bashrc
   - orig: nvim
     dest: .config/nvim
   - orig: tmux/tmux.conf
@@ -27,6 +29,7 @@ homebrew_taps:
 homebrew_installed_packages:
   - pv
   - bat
+  - starship
   - ripgrep
 
 apt_installed_packages:

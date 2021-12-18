@@ -14,9 +14,9 @@ Totally inspired by [mac-dev-playbook](https://github.com/geerlingguy/mac-dev-pl
 1. Continue with the steps for Linux and Windows (WSL)
 
 ### Linux & Windows (WSL)
-1. [Install Ansible](http://docs.ansible.com/intro_installation.html).
+1. [Install Ansible](http://docs.ansible.com/intro_installation.html). (This is prepared to work with ansible-base/core)
 1. Clone this repository to your local drive.
-1. Run `$ ansible-galaxy install -r requirements.yml` inside this directory to install required Ansible roles.
+1. Run `$ ansible-galaxy install -r requirements.yml --force-with-deps` inside this directory to install required Ansible roles.
 1. Run `ansible-playbook main.yml -i inventory --ask-become-pass` inside this directory. Enter your account password when prompted.
 
 > Note: If some Homebrew commands fail, you might need to agree to Xcode's license or fix some other Brew issue. Run `brew doctor` to see if this is the case.

@@ -33,3 +33,12 @@
         name: "{{ item.name | default(item) }}"
         state: "{{ kubernetes_installed_packages_state }}"
       loop: "{{ kubernetes_installed_packages }}"
+
+- name: Install velero
+  when: configure_velero
+  include_tasks: "velero-client.yml"
+  args:
+    apply:
+      tags: ["velero"]
+  tags: ["velero"]
+  

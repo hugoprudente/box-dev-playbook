@@ -12,9 +12,9 @@
 
   roles:
     - role: elliotweiser.osx-command-line-tools
-      tags: ['homebrew']
+      tags: ['osx-clt','osx']
     - role: geerlingguy.mac.homebrew
-      tags: ['homebrew']
+      tags: ['homebrew','osx']
     - role: apt
       when: ansible_os_family == "Debian"
       tags: ['apt']
@@ -23,10 +23,10 @@
       tags: ['dotfiles']
     - role: geerlingguy.mac.mas
       when: mas_installed_apps or mas_installed_app_ids
-      tags: ['mas']
+      tags: ['mas','homebrew','osx']
     - role: kubernetes
       when: configure_kubernetes
-      tags: ['kubernetes', 'containers']
+      tags: ['kubernetes', 'containers', 'k8s']
     - role: andrewrothstein.terraform
       when: configure_terraform
       tags: ['terraform', 'iac']

@@ -6,4 +6,4 @@ lint:
 	ansible-lint
 
 dependencies:
-	ansible-galaxy install -r requirements.yml
+	ansible-galaxy install -r requirements.yml --force-with-deps

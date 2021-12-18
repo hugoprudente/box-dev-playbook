@@ -6,11 +6,20 @@
   failed_when: false
 
 - block:
+    - name: check operating system
+      shell: uname
+      ignore_errors: yes
+      register: uname_result
+
+    - name: velero fetch_distribution
+      set_fact:
+        velero_distribution: "{{ uname_result.stdout | lower }}"
+
     - name: velero download
       get_url:
         url: "{{ velero_url }}"
         dest: /tmp
-        checksum: "{{ velero_checksum }}"
+        checksum: "{{ velero_checksum[velero_distribution] }}"
 
     - block:
         - name: velero unarchive

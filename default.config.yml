@@ -31,17 +31,23 @@ homebrew_installed_packages:
   - bat
   - starship
   - direnv
+  - htop
+  - neovim
   - ripgrep
+  - tmux
 
 apt_installed_packages:
   - pv
   - bat
   - neovim
   - htop
+  - ripgrep
+  - direnv
   - tmux
 
 # Kubernetes
 configure_kubernetes: true
+
 kuberentes_repository_packages:
   - repo: "deb https://apt.kubernetes.io/ kubernetes-xenial main"
     key: https://packages.cloud.google.com/apt/doc/apt-key.gpg
@@ -51,6 +57,12 @@ kubernetes_installed_packages:
   - helm
   - kubectl
 
+#K8S Addons
+configure_velero: true
+
 # Containers
 configure_docker: false
 configure_podman: false
+
+#Terraform
+configure_terraform: true

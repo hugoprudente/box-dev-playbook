@@ -1,0 +1,6 @@
+---
+velero_pkg: "velero-{{ velero_version }}-linux-amd64"
+velero_pkg_ext: "{{ velero_pkg }}.tar.gz"
+velero_pkg_bin: "velero-{{ velero_version }}-linux-amd64/velero"
+velero_bin: /usr/local/bin/velero
+velero_url: "https://github.com/vmware-tanzu/velero/releases/download/{{ velero_version }}/velero-{{ velero_version }}-linux-amd64.tar.gz"  # yamllint disable-line rule:line-length

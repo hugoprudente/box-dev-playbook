@@ -12,24 +12,24 @@
 - name: (Debian/Ubuntu) Ensure configured kuberentes packages are installed
   when: ansible_os_family == "Debian"
   block:
-  - name: Add an Apt signing key, uses whichever key is at the URL
-    become: yes
-    apt_key:
-      url: "{{ item.key | default(item) }}"
-      state: present
-    with_items: "{{ kuberentes_repository_packages }}"
+    - name: Add an Apt signing key, uses whichever key is at the URL
+      become: yes
+      apt_key:
+        url: "{{ item.key | default(item) }}"
+        state: present
+      with_items: "{{ kuberentes_repository_packages }}"
 
-  - name: (Debian/Ubuntu) Ensure extra kubernetes repositores are installed
-    become: yes
-    apt_repository:
-      repo: "{{ item.repo | default(item) }}"
-      state: present
-      update_cache: yes
-    with_items: "{{ kuberentes_repository_packages }}"
-      
-  - name: (Debian/Ubuntu) Ensure configured kubernetes packages are installed
-    become: yes
-    apt:
-      name: "{{ item.name | default(item) }}"
-      state: "{{ kubernetes_installed_packages_state }}"
-    loop: "{{ kubernetes_installed_packages }}"
+    - name: (Debian/Ubuntu) Ensure extra kubernetes repositores are installed
+      become: yes
+      apt_repository:
+        repo: "{{ item.repo | default(item) }}"
+        state: present
+        update_cache: yes
+      with_items: "{{ kuberentes_repository_packages }}"
+
+    - name: (Debian/Ubuntu) Ensure configured kubernetes packages are installed
+      become: yes
+      apt:
+        name: "{{ item.name | default(item) }}"
+        state: "{{ kubernetes_installed_packages_state }}"
+      loop: "{{ kubernetes_installed_packages }}"

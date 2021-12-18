@@ -1,0 +1,32 @@
+---
+- name: velero version
+  command: velero version --client-only
+  register: velero_installed_version
+  changed_when: false
+  failed_when: false
+
+- block:
+    - name: velero download
+      get_url:
+        url: "{{ velero_url }}"
+        dest: /tmp
+        checksum: "{{ velero_checksum }}"
+
+    - block:
+        - name: velero unarchive
+          unarchive:
+            src: "/tmp/{{ velero_pkg_ext }}"
+            dest: /tmp
+            remote_src: true
+        - name: velero executable bin for every user
+          copy:
+            src: "/tmp/{{ velero_pkg_bin }}"
+            dest: "{{ velero_bin }}"
+            remote_src: true
+            owner: root
+            group: root
+            mode: '0755'
+      become: true
+  when: >
+    velero_installed_version.stdout is not defined
+    or velero_version not in velero_installed_version.stdout

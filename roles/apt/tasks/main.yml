@@ -5,4 +5,3 @@
     install_options: "{{ item.install_options | default(omit) }}"
     state: present
   loop: "{{ apt_installed_packages }}"
-  

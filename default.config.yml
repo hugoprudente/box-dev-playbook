@@ -39,7 +39,7 @@ apt_installed_packages:
   - neovim
   - htop
   - tmux
-  
+
 # Kubernetes
 configure_kubernetes: true
 kuberentes_repository_packages:

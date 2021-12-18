@@ -27,5 +27,8 @@
     - role: kubernetes
       when: configure_kubernetes
       tags: ['kubernetes', 'containers']
+    - role: andrewrothstein.terraform
+      when: configure_terraform
+      tags: ['terraform', 'iac']
   tasks:
     - include_tasks: tasks/ansible-setup.yml

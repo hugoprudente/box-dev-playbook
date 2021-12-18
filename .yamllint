@@ -2,7 +2,7 @@
 # Based on ansible-lint config
 extends: default
 ignore: |
-  old/
+   .venv/
 rules:
   braces:
     max-spaces-inside: 1
@@ -24,11 +24,10 @@ rules:
     level: error
   hyphens:
     level: error
-  indentation: disable
   key-duplicates: enable
   line-length: disable
   new-line-at-end-of-file: disable
   new-lines:
     type: unix
-  trailing-spaces: disable
+  trailing-spaces: enable
   truthy: disable

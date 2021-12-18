@@ -31,5 +31,5 @@
     become: yes
     apt:
       name: "{{ item.name | default(item) }}"
-      state: present
+      state: "{{ kubernetes_installed_packages_state }}"
     loop: "{{ kubernetes_installed_packages }}"

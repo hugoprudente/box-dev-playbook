@@ -11,8 +11,9 @@
       tags: ['always']
 
   roles:
-    - role: geerlingguy.homebrew
-      when: ansible_os_family == "Darwin"
+    - role: elliotweiser.osx-command-line-tools
+      tags: ['homebrew']
+    - role: geerlingguy.mac.homebrew
       tags: ['homebrew']
     - role: apt
       when: ansible_os_family == "Debian"
@@ -20,6 +21,9 @@
     - role: dotfiles
       when: configure_dotfiles
       tags: ['dotfiles']
+    - role: geerlingguy.mac.mas
+      when: mas_installed_apps or mas_installed_app_ids
+      tags: ['mas']
     - role: kubernetes
       when: configure_kubernetes
       tags: ['kubernetes', 'containers']

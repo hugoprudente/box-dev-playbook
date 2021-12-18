@@ -1,0 +1,12 @@
+---
+parseable: true
+use_default_rules: true
+verbosity: 1
+skip_list:
+  - 301
+exclude_paths:
+  - galaxy.yml
+  - pipeline.yml
+  - ./tests/
+  - ./plugins/
+  - files/inventories/*

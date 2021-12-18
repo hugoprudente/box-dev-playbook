@@ -1,14 +1,14 @@
 ---
 downloads: ~/.ansible-downloads/
 
+configure_osx: true
+
 configure_dotfiles: true
 configure_terminal: true
 dotfiles_repo: https://github.com/hugoprudente/dotfiles.git
 dotfiles_repo_accept_hostkey: true
 dotfiles_repo_local_destination: ~/personal/dotfiles
 dotfiles_files:
-#  - orig: oh-my-zsh/zshrc
-#    dest: .zshrc
   - orig: bashrc
     dest: .bashrc
   - orig: nvim
@@ -30,6 +30,7 @@ homebrew_installed_packages:
   - pv
   - bat
   - starship
+  - direnv
   - ripgrep
 
 apt_installed_packages:
@@ -38,7 +39,6 @@ apt_installed_packages:
   - neovim
   - htop
   - tmux
-  - terminator
   
 # Kubernetes
 configure_kubernetes: true

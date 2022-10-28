@@ -2,7 +2,11 @@
 dotfiles_repo: "https://github.com/hugoprudente/dotfiles.git"
 dotfiles_repo_version: mainline
 dotfiles_repo_accept_hostkey: false
-dotfiles_repo_local_destination: "~/personal/dotfiles"
+
+dotfiles_repo_local_destination_basepath: ~/personal
+dotfiles_repo_local_destination: "{{ dotfiles_repo_local_destination_basepath }}/dotfiles"
+
+dotfiles_force_pull: False
 
 dotfiles_home: "~"
 dotfiles_files:

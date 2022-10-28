@@ -1,0 +1,7 @@
+- name: Ensure configured dnf packages are installed.
+  become: True
+  dnf:
+    name: "{{ item.name | default(item) }}"
+    install_options: "{{ item.install_options | default(omit) }}"
+    state: present
+  loop: "{{ dnf_installed_packages }}"

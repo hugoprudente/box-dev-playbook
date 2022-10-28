@@ -1,0 +1,79 @@
+---
+- name: Create ~/.logs directory
+  ansible.builtin.file:
+    path: "~/.logs"
+    state: directory
+    mode: '0755'
+
+- name: Check if dotfiles are present
+  register: dir_to_check
+  ansible.builtin.stat:
+    path: "{{ dotfiles_repo_local_destination }}"
+
+- name: Ensure dotfiles repository is cloned locally.
+  when: dir_to_check.stat.isdir is not defined
+  ansible.builtin.git:
+    repo: "{{ dotfiles_repo }}"
+    dest: "{{ dotfiles_repo_local_destination }}"
+    version: "{{ dotfiles_repo_version }}"
+    force: "{{ dotfiles_force_pull }}"
+    accept_hostkey: "{{ dotfiles_repo_accept_hostkey }}"
+  ignore_errors: "{{ not dotfiles_force_pull }}"
+
+- name: Ensure all configured dotfiles are links.
+  ansible.builtin.command: "ls -F {{ dotfiles_home }}/{{ item.dest }}"
+  register: existing_dotfile_info
+  failed_when: false
+  check_mode: false
+  changed_when: false
+  with_items: "{{ dotfiles_files }}"
+
+- name: Remove existing dotfiles file if a replacement is being linked.
+  ansible.builtin.file:
+    path: "{{ dotfiles_home }}/{{ dotfiles_files[item.0] }}"
+    state: absent
+  when: "'@' not in item.1.stdout"
+  with_indexed_items: "{{ existing_dotfile_info.results }}"
+
+- name: Link dotfiles into home folder.
+  ansible.builtin.file:
+    src: "{{ dotfiles_repo_local_destination }}/{{ item.orig }}"
+    dest: "{{ dotfiles_home }}/{{ item.dest }}"
+    state: link
+    force: true
+  with_items: "{{ dotfiles_files }}"
+
+- name: Configure Oh My Zsh
+  when: dotfiles_configure_ohmyzsh
+  block:
+    - name: Cloning oh-my-zsh
+      ansible.builtin.git:
+        repo: https://github.com/robbyrussell/oh-my-zsh
+        dest: "~/.oh-my-zsh"
+      register: cloning
+
+    - name: Creating new ~/.zshrc
+      ansible.builtin.copy:
+        src: ~/.oh-my-zsh/templates/zshrc.zsh-template
+        dest: ~/.zshrc
+      when: cloning|success
+
+- name: Configure Starship
+  when: dotfiles_configure_starship
+  block:
+    - name: Check if startip is already installed
+      register: dir_to_check
+      ansible.builtin.stat:
+        path: "/usr/local/bin/starship"
+
+    - name: Install if not installed
+      when: dir_to_check.stat.isdir is not defined
+      block:
+        - name: Fething Starship install script
+          get_url:
+            url: https://starship.rs/install.sh
+            dest: /tmp/
+            mode: 0755
+        - name: Execute Starship install script
+          shell: /tmp/install.sh -y
+          become: yes

@@ -1,62 +1,14 @@
 ---
-- name: Ensure dotfiles repository is cloned locally.
-  git:
-    repo: "{{ dotfiles_repo }}"
-    dest: "{{ dotfiles_repo_local_destination }}"
-    version: "{{ dotfiles_repo_version }}"
-    accept_hostkey: "{{ dotfiles_repo_accept_hostkey }}"
-  become: false
+- name: Check if github.com is accessible on the destination
+  register: github_online
+  uri:
+    url: "https://github.com"
+  ignore_errors: true
 
-- name: Ensure all configured dotfiles are links.
-  command: "ls -F {{ dotfiles_home }}/{{ item.dest }}"
-  register: existing_dotfile_info
-  failed_when: false
-  check_mode: false
-  changed_when: false
-  with_items: "{{ dotfiles_files }}"
+- name: Include the online tasks
+  when: not github_online.failed
+  ansible.builtin.include_tasks: online.yml
 
-- name: Remove existing dotfiles file if a replacement is being linked.
-  file:
-    path: "{{ dotfiles_home }}/{{ dotfiles_files[item.0] }}"
-    state: absent
-  when: "'@' not in item.1.stdout"
-  with_indexed_items: "{{ existing_dotfile_info.results }}"
-
-- name: Link dotfiles into home folder.
-  file:
-    src: "{{ dotfiles_repo_local_destination }}/{{ item.orig }}"
-    dest: "{{ dotfiles_home }}/{{ item.dest }}"
-    state: link
-    force: true
-  become: false
-  with_items: "{{ dotfiles_files }}"
-
-- name: Configure Oh My Zsh
-  when: dotfiles_configure_ohmyzsh
-  block:
-    - name: Cloning oh-my-zsh
-      git:
-        repo: https://github.com/robbyrussell/oh-my-zsh
-        dest: "~/.oh-my-zsh"
-      register: cloning
-      become: no
-
-    - name: Creating new ~/.zshrc
-      copy:
-        src: ~/.oh-my-zsh/templates/zshrc.zsh-template
-        dest: ~/.zshrc
-      when: cloning|success
-      become: no
-
-- name: Configure Starship
-  when: dotfiles_configure_starship
-  block:
-    - name: Fething Starship install script
-      get_url:
-        url: https://starship.rs/install.sh
-        dest: /tmp/
-        mode: 0755
-
-    - name: Execute Starship install script
-      shell: /tmp/install.sh -y
-      become: yes
+- name: Include the offline tasks
+  when: github_online.failed
+  ansible.builtin.include_tasks: offline.yml

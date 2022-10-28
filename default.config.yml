@@ -1,13 +1,17 @@
 ---
 downloads: ~/.ansible-downloads/
 
-configure_osx: true
+configure_osx: false
 
 configure_dotfiles: true
 configure_terminal: true
+
 dotfiles_repo: https://github.com/hugoprudente/dotfiles.git
 dotfiles_repo_accept_hostkey: true
-dotfiles_repo_local_destination: ~/personal/dotfiles
+dotfiles_repo_local_destination_basepath: ~/personal
+dotfiles_repo_local_destination: "{{ dotfiles_repo_local_destination_basepath }}/dotfiles"
+
+# Dotfiles configs mapping
 dotfiles_files:
   - orig: bashrc
     dest: .bashrc
@@ -17,6 +21,8 @@ dotfiles_files:
     dest: .tmux.conf
   - orig: tmux/tmux.conf.local
     dest: .tmux.conf.local
+
+# Shell configuration
 dotfiles_configure_ohmyzsh: false
 dotfiles_configure_bashit: false
 dotfiles_configure_starship: true
@@ -36,6 +42,7 @@ homebrew_installed_packages:
   - ripgrep
   - tmux
 
+# APT
 apt_installed_packages:
   - pv
   - bat
@@ -44,6 +51,12 @@ apt_installed_packages:
   - ripgrep
   - direnv
   - tmux
+
+# DNF
+dnf_installed_packages:
+  - tmux
+  - htop
+  - neovim
 
 # Kubernetes
 configure_kubernetes: true
@@ -62,7 +75,7 @@ configure_velero: true
 
 # Containers
 configure_docker: false
-configure_podman: false
+configure_podman: true
 
 #Terraform
 configure_terraform: true

@@ -4,3 +4,4 @@ roles:
   - name: andrewrothstein.terraform
 collections:
   - name: geerlingguy.mac
+  - name: community.general

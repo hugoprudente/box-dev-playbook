@@ -1,29 +1,44 @@
 ---
-- hosts: all
+- name: Configure SRE Box
+  hosts: all
+  gather_facts: True
 
   vars_files:
     - default.config.yml
 
   pre_tasks:
-    - include_vars: "{{ item }}"
+    - name: Include overwrite setup from environment
+      ansible.builtin.include_vars: "{{ item }}"
       with_fileglob:
         - "{{ playbook_dir }}/config.yml"
       tags: ['always']
 
   roles:
+    # OSX Specific roles
     - role: elliotweiser.osx-command-line-tools
-      tags: ['osx-clt','osx']
+      tags: ['osx-clt', 'osx']
     - role: geerlingguy.mac.homebrew
-      tags: ['homebrew','osx']
+      tags: ['homebrew', 'osx']
+    - role: geerlingguy.mac.mas
+      when: mas_installed_apps or mas_installed_app_ids
+      tags: ['mas', 'homebrew', 'osx']
+
+    # Debian based Specific
     - role: apt
       when: ansible_os_family == "Debian"
       tags: ['apt']
+
+    # RedHat based specifics
+    - role: dnf
+      when: ansible_os_family == "RedHat"
+      tags: ['dnf']
+
     - role: dotfiles
       when: configure_dotfiles
+      become: false
       tags: ['dotfiles']
-    - role: geerlingguy.mac.mas
-      when: mas_installed_apps or mas_installed_app_ids
-      tags: ['mas','homebrew','osx']
+
+    # Tools, venvs, command lines and much more
     - role: kubernetes
       when: configure_kubernetes
       tags: ['kubernetes', 'containers', 'k8s']
@@ -31,4 +46,5 @@
       when: configure_terraform
       tags: ['terraform', 'iac']
   tasks:
-    - include_tasks: tasks/ansible-setup.yml
+    - name: Setup ansible tasks
+      ansible.builtin.include_tasks: tasks/ansible-setup.yml

@@ -1,23 +1,25 @@
 ---
 - name: Ensure Ansible downloads directory exists.
-  file:
+  ansible.builtin.file:
     path: "{{ downloads }}"
     state: directory
+    mode: "0755"
 
 - name: Ensure /etc/ansible directory exists.
-  file:
+  ansible.builtin.file:
     path: /etc/ansible
     state: directory
+    mode: "0755"
   become: true
 
 - name: Check if /user/local/etc/ansible exists
   register: ansible_dir
-  stat:
+  ansible.builtin.stat:
     path: /usr/local/etc/ansible
 
 - name: Symlink /usr/local/etc/ansible to /etc/ansible.
   when: ansible_dir.stat.exists and ansible_dir.stat.isdir
-  file:
+  ansible.builtin.file:
     src: /etc/ansible
     path: /usr/local/etc/ansible
     state: link

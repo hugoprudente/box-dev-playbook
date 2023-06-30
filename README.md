@@ -10,18 +10,13 @@ Totally inspired by [mac-dev-playbook](https://github.com/geerlingguy/mac-dev-pl
 
 ### OSX Only
 
-1. Ensure Apple's command line tools are installed (`xcode-select --install` to launch the installer).
-1. Continue with the steps for Linux and Windows (WSL)
+1. Install the Apple's command line tools
 
-### Linux & Windows (WSL)
-1. [Install Ansible](http://docs.ansible.com/intro_installation.html). (This is prepared to work with ansible-base/core)
-1. Clone this repository to your local drive.
-1. Run `$ ansible-galaxy install -r requirements.yml --force-with-deps` inside this directory to install required Ansible roles.
-1. Run `ansible-playbook main.yml -i inventory --ask-become-pass` inside this directory. Enter your account password when prompted.
+```bash
+xcode-select --install
+```
 
-> Note: If some Homebrew commands fail, you might need to agree to Xcode's license or fix some other Brew issue. Run `brew doctor` to see if this is the case.
-
-### Running a specifi on Window (WSL)
+### Window (WSL) only
 
 Due to WSL mount the */home/user* as */mnt/c* you will face **world writable** directory issue, to fix it just export the ANSIBLE_CONFIG environment variable.
 
@@ -29,11 +24,49 @@ Due to WSL mount the */home/user* as */mnt/c* you will face **world writable** d
 export ANSIBLE_CONFIG=`pwd`/ansible.cfg
 ```
 
+1. Continue with the steps for Linux and Windows (WSL)
+
+### Linux & Windows (WSL)
+
+1. [Install Ansible](http://docs.ansible.com/intro_installation.html). (This is prepared to work with ansible-base/core)
+
+Or run the script below to install a `venv` with the latest `python3` available in your system and install `ansible-2.12.10`
+
+```bash
+bash scripts/bootstra.sh env
+
+# or
+
+ANSIBLE_VERSION=2.12.10 bash scripts/bootstrap.sh env
+```
+
+1. Clone this repository to your local drive.
+
+```bash
+git clone https://github.com/hugoprudente/box-dev-playbook.git
+```
+
+1. Install the `ansible-galaxy` dependencies
+
+```bash
+ansible-galaxy install -r requirements.yml --force-with-deps
+```
+
+1. Run the the setup playbook. Enter your account password when prompted.
+
+```bash 
+ansible-playbook main.yml -i inventory --ask-become-pass
+```
+
+> Note: If some Homebrew commands fail, you might need to agree to Xcode's license or fix some other Brew issue. Run `brew doctor` to see if this is the case.
+
 ### Running a specific set of tagged tasks
 
 You can filter which part of the provisioning process to run by specifying a set of tags using `ansible-playbook`'s `--tags` flag. The tags available are `dotfiles`, `homebrew`.
 
-    ansible-playbook main.yml -i inventory -K --tags "dotfiles,homebrew"
+```bash
+ansible-playbook main.yml -i inventory -K --tags "dotfiles,homebrew"
+```
 
 ## Overriding Defaults
 
@@ -43,15 +76,15 @@ So you can customize your one using as base `default.config.yml` by creating a `
 
 ## Included Applications / Configuration (Default)
 
-* [x] Ansible 
+.
 
 ## Testing the Playbook
 
-Use the [Mac OS X VirtualBox VM](https://github.com/geerlingguy/dev-osx-virtualbox-vm).
+Use the [Mac OS X VirtualBox VM](https://github.com/geerlingguy/macos-virtualbox-vm)
 
 Additionally, this project is [continuously tested on GitHub Actions' macOS infrastructure](https://github.com/hugoprudente/box-dev-playbook/actions?query=workflow%3ACI).
 
-## Troubleshoot 
+## Troubleshoot
 
 ### GPG Signed commits
 
@@ -64,7 +97,7 @@ export GPG_TTY=$(tty)
 
 ## Author
 
-[Hugo Prudente](hugo.kenshin@gmail.com)
+[Hugo Prudente](hugo.kenshin+github@gmail.com)
 
 [badge-gh-actions]: https://github.com/hugoprudente/box-dev-playbook/workflows/CI/badge.svg?event=push
 [link-gh-actions]: https://github.com/hugoprudente/box-dev-playbook/actions?query=workflow%3ACI

@@ -1,7 +1,7 @@
 ---
 roles:
-  - name: geerlingguy.homebrew
   - name: andrewrothstein.terraform
 collections:
   - name: geerlingguy.mac
   - name: community.general
+  - name: ansible.posix

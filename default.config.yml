@@ -1,14 +1,33 @@
 ---
 downloads: ~/.ansible-downloads/
 
-configure_osx: false
-
 configure_dotfiles: true
-configure_terminal: true
+
+# Set to 'true' to configure the Dock via dockutil.
+configure_dock: true
+dockitems_remove: []
+# - Launchpad
+# - TV
+# - Podcasts
+# - 'App Store'
+dockitems_persist:
+  - name: "VSCodium"
+    path: "/Applications/VSCodium.app/"
+    pos: 5
+  - name: "Iterm"
+    path: "/Applications/Iterm.app"
+    pos: 6
+
+configure_sudoers: false
+sudoers_custom_config: ''
+# Example:
+# sudoers_custom_config: |
+#   # Allow users in admin group to use sudo with no password.
+#   %admin ALL=(ALL) NOPASSWD: ALL
 
 dotfiles_repo: https://github.com/hugoprudente/dotfiles.git
 dotfiles_repo_accept_hostkey: true
-dotfiles_repo_local_destination_basepath: ~/personal
+dotfiles_repo_local_destination_basepath: ~/code/github.com/hugoprudente
 dotfiles_repo_local_destination: "{{ dotfiles_repo_local_destination_basepath }}/dotfiles"
 
 # Dotfiles configs mapping
@@ -22,25 +41,66 @@ dotfiles_files:
   - orig: tmux/tmux.conf.local
     dest: .tmux.conf.local
 
-# Shell configuration
-dotfiles_configure_ohmyzsh: false
-dotfiles_configure_bashit: false
-dotfiles_configure_starship: true
-
 # Homebrew
 homebrew_taps:
   - homebrew/core
   - homebrew/cask
 
+homebrew_cask_appdir: /Applications
+homebrew_cask_apps:
+  - rectangle
+  - vscodium
+  - iterm2
+
 homebrew_installed_packages:
+  - mas
   - pv
   - bat
   - starship
   - direnv
   - htop
+  - gpg
+  - openssl
   - neovim
   - ripgrep
+  - node # used by neovim
   - tmux
+  - podman
+  - qemu
+  - coreutils
+  - json-c
+
+# See `geerlingguy.mas` role documentation for usage instructions.
+# mas_email: ""
+# mas_password: ""
+mas_signin_dialog: true
+mas_installed_apps:
+  - {id: 425264550, name: "Blackmagic Disk Speed Test (3.0)"}
+  - {id: 497799835, name: "Xcode (8.1)"}
+
+# Install packages from other package managers.
+# Note: You are responsible for making sure the required package managers are
+# installed, eg. through homebrew.
+composer_packages: []
+# - name: drush
+#   state: present # present/absent, default: present
+#   version: "^8.1" # default: N/A
+gem_packages: []
+# - name: bundler
+#   state: present # present/absent/latest, default: present
+#   version: "~> 1.15.1" # default: N/A
+npm_packages: []
+# - name: webpack
+#   state: present # present/absent/latest, default: present
+#   version: "^2.6" # default: N/A
+pip_packages:
+  - name: ansible-lint
+    state: present # present/absent/latest, default: present
+    executable: "{{ lookup('ansible.builtin.env', 'HOME') }}/Environments/osx39/bin/pip3"
+    # version: "0.16.3" # default: N/A
+
+# Glob pattern to ansible task files to run after all other tasks are finished.
+post_provision_tasks: []
 
 # APT
 apt_installed_packages:
@@ -51,15 +111,25 @@ apt_installed_packages:
   - ripgrep
   - direnv
   - tmux
+  - node
+  - podman
 
 # DNF
 dnf_installed_packages:
   - tmux
   - htop
   - neovim
+  - node
+  - podman
+
+
+# Shell configuration
+dotfiles_configure_ohmyzsh: false
+dotfiles_configure_bashit: false
+dotfiles_configure_starship: false
 
 # Kubernetes
-configure_kubernetes: true
+configure_kubernetes: false
 
 kuberentes_repository_packages:
   - repo: "deb https://apt.kubernetes.io/ kubernetes-xenial main"
@@ -71,11 +141,11 @@ kubernetes_installed_packages:
   - kubectl
 
 #K8S Addons
-configure_velero: true
+configure_velero: false
 
 # Containers
 configure_docker: false
-configure_podman: true
+configure_podman: false
 
 #Terraform
-configure_terraform: true
+configure_terraform: false

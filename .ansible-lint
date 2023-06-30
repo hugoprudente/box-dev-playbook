@@ -3,10 +3,15 @@ parseable: true
 use_default_rules: true
 verbosity: 1
 skip_list:
-  - 301
+  - "301"
 exclude_paths:
   - galaxy.yml
   - pipeline.yml
+  - scripts/*
   - ./tests/
   - ./plugins/
   - files/inventories/*
+  - roles/andrewrothstein*
+  - roles/elliotweiser.osx-command-line-tools*
+  - roles/geerlingguy*
+  - "*lint.yml"

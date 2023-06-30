@@ -3,4 +3,6 @@
 *.retry
 roles/geerlingguy*
 roles/elliot*
+roles/andrewrothstein*
 config.yml
+.cache/*

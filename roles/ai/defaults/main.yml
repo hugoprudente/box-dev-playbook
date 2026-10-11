@@ -9,3 +9,11 @@ ai_pip_packages:
 
 ai_ollama_models:
   - deepseek-r1:1.5b
+
+ai_skills_repos:
+  - repo: JuliusBrussee/caveman
+    method: skills
+    agents:
+      - cursor
+    global: true
+    extra_args: ""

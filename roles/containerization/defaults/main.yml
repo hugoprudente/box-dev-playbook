@@ -21,3 +21,5 @@ containerization_artifactory_username: ""
 containerization_artifactory_password: ""
 containerization_artifactory_registries: []
 containerization_pull_images: []
+
+# Compose (docker compose / podman-compose) is ensured by tasks/compose.yml after the engine install.

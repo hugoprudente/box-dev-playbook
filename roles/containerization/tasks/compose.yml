@@ -1,0 +1,63 @@
+---
+- name: (Docker Debian) Ensure Docker Compose plugin is installed
+  become: true
+  ansible.builtin.apt:
+    name: docker-compose-plugin
+    state: present
+  when:
+    - containerization_engine_selected == 'docker'
+    - ansible_os_family == "Debian"
+
+- name: (Docker RedHat) Ensure Docker Compose plugin is installed
+  become: true
+  ansible.builtin.dnf:
+    name: docker-compose-plugin
+    state: present
+  when:
+    - containerization_engine_selected == 'docker'
+    - ansible_os_family == "RedHat"
+
+- name: (Docker Linux) Verify Docker Compose is available
+  ansible.builtin.command: docker compose version
+  changed_when: false
+  when:
+    - containerization_engine_selected == 'docker'
+    - ansible_os_family in ["Debian", "RedHat"]
+
+- name: (Docker Darwin) Verify Docker Compose is available
+  ansible.builtin.command: docker compose version
+  changed_when: false
+  when:
+    - containerization_engine_selected == 'docker'
+    - ansible_os_family == "Darwin"
+
+- name: (Podman Debian) Ensure podman-compose is installed
+  become: true
+  ansible.builtin.apt:
+    name: podman-compose
+    state: present
+  when:
+    - containerization_engine_selected == 'podman'
+    - ansible_os_family == "Debian"
+
+- name: (Podman RedHat) Ensure podman-compose is installed
+  become: true
+  ansible.builtin.dnf:
+    name: podman-compose
+    state: present
+  when:
+    - containerization_engine_selected == 'podman'
+    - ansible_os_family == "RedHat"
+
+- name: (Podman Darwin) Ensure podman-compose is installed
+  community.general.homebrew:
+    name: podman-compose
+    state: present
+  when:
+    - containerization_engine_selected == 'podman'
+    - ansible_os_family == "Darwin"
+
+- name: (Podman) Verify podman-compose is available
+  ansible.builtin.command: podman-compose version
+  changed_when: false
+  when: containerization_engine_selected == 'podman'

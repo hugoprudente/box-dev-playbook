@@ -1,0 +1,47 @@
+---
+- name: clusterctl version
+  ansible.builtin.command: clusterctl version
+  register: clusterctl_installed_version
+  changed_when: false
+  failed_when: false
+
+- name: Get latest clusterctl release version
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/kubernetes-sigs/cluster-api/releases/latest
+    return_content: true
+    headers:
+      Accept: application/vnd.github.v3+json
+  register: clusterctl_latest_release
+
+- name: Set clusterctl version fact
+  ansible.builtin.set_fact:
+    clusterctl_version: "{{ clusterctl_latest_release.json.tag_name }}"
+
+- name: (Darwin) Install clusterctl via Homebrew
+  community.general.homebrew:
+    name: clusterctl
+    state: present
+  when:
+    - ansible_os_family == "Darwin"
+    - clusterctl_installed_version.rc != 0 or clusterctl_version not in clusterctl_installed_version.stdout
+
+- name: (Linux) Install clusterctl via binary download
+  when:
+    - ansible_os_family in ["Debian", "RedHat"]
+    - clusterctl_installed_version.rc != 0 or clusterctl_version not in clusterctl_installed_version.stdout
+  block:
+    - name: Download clusterctl binary
+      ansible.builtin.get_url:
+        url: "https://github.com/kubernetes-sigs/cluster-api/releases/download/{{ clusterctl_version }}/clusterctl-{{ common_os }}-{{ common_arch }}"
+        dest: /tmp/clusterctl
+        mode: "0755"
+
+    - name: Install clusterctl to /usr/local/bin
+      become: true
+      ansible.builtin.command: install -o root -g root -m 0755 /tmp/clusterctl /usr/local/bin/clusterctl
+      changed_when: true
+
+    - name: Cleanup clusterctl temp file
+      ansible.builtin.file:
+        path: /tmp/clusterctl
+        state: absent

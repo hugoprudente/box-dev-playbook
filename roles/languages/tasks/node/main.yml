@@ -1,0 +1,51 @@
+---
+- name: Get latest Node.js version from nodejs.org
+  ansible.builtin.uri:
+    url: https://nodejs.org/dist/index.json
+    return_content: true
+  register: languages_node_index
+  when: (lang.version | default('latest')) == 'latest'
+
+- name: Set Node.js target version (latest)
+  ansible.builtin.set_fact:
+    languages_node_version: "{{ (languages_node_index.json | first).version }}"
+  when: (lang.version | default('latest')) == 'latest'
+
+- name: Set Node.js target version (pinned)
+  ansible.builtin.set_fact:
+    languages_node_version: >-
+      {{ 'v' ~ lang.version if (lang.version | string) is match('^[0-9]') else lang.version }}
+  when: (lang.version | default('latest')) != 'latest'
+
+- name: (Darwin) Install Node.js via Homebrew
+  community.general.homebrew:
+    name: node
+    state: latest
+  when: ansible_os_family == "Darwin"
+
+- name: (Linux) Install Node.js via official binary tarball
+  when: ansible_os_family in ["Debian", "RedHat"]
+  block:
+    - name: Set Node.js linux arch directory name
+      ansible.builtin.set_fact:
+        languages_node_linux_arch: "{{ 'arm64' if common_arch == 'arm64' else 'x64' }}"
+
+    - name: Download Node.js binary archive
+      ansible.builtin.get_url:
+        url: "https://nodejs.org/dist/{{ languages_node_version }}/node-{{ languages_node_version }}-linux-{{ languages_node_linux_arch }}.tar.xz"
+        dest: "/tmp/node-{{ languages_node_version }}-linux-{{ languages_node_linux_arch }}.tar.xz"
+        mode: "0644"
+
+    - name: Extract Node.js to /usr/local
+      become: true
+      ansible.builtin.unarchive:
+        src: "/tmp/node-{{ languages_node_version }}-linux-{{ languages_node_linux_arch }}.tar.xz"
+        dest: /usr/local
+        remote_src: true
+        extra_opts:
+          - --strip-components=1
+
+    - name: Cleanup Node.js archive
+      ansible.builtin.file:
+        path: "/tmp/node-{{ languages_node_version }}-linux-{{ languages_node_linux_arch }}.tar.xz"
+        state: absent

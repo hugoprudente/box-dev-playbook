@@ -1,0 +1,19 @@
+# Import into WireGuard on your home device — {{ item.name }}
+[Interface]
+Address = {{ item.address }}
+PrivateKey = {{ item.private_key }}
+{% if item.dns is defined %}
+DNS = {{ item.dns }}
+{% endif %}
+
+[Peer]
+PublicKey = {{ remote_vpn_server_public_key.stdout }}
+Endpoint = {{ remote_vpn_public_endpoint }}:{{ remote_vpn_listen_port }}
+AllowedIPs = {{ item.allowed_ips | default(remote_vpn_client_allowed_ips) }}
+{% if item.persistent_keepalive is defined %}
+PersistentKeepalive = {{ item.persistent_keepalive }}
+{% elif remote_vpn_peer_default_keepalive is defined %}
+PersistentKeepalive = {{ remote_vpn_peer_default_keepalive }}
+{% else %}
+PersistentKeepalive = 25
+{% endif %}

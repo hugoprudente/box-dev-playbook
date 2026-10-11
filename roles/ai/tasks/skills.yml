@@ -1,0 +1,38 @@
+---
+- name: Require Node.js for AI skills installation
+  ansible.builtin.command: node --version
+  changed_when: false
+
+- name: Ensure AI skills install marker directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.box-dev-playbook/ai-skills"
+    state: directory
+    mode: "0755"
+
+- name: Install AI agent skills (skills registry)
+  ansible.builtin.shell: |
+    set -euo pipefail
+    npx --yes skills add {{ item.repo }}{% for agent in item.agents | default(['cursor']) %} -a {{ agent }}{% endfor %}{% if item.global | default(true) %} -g{% endif %} {{ item.extra_args | default('') }}
+    touch "{{ ansible_env.HOME }}/.box-dev-playbook/ai-skills/{{ item.repo | replace('/', '_') }}.done"
+  args:
+    creates: "{{ ansible_env.HOME }}/.box-dev-playbook/ai-skills/{{ item.repo | replace('/', '_') }}.done"
+  environment:
+    HOME: "{{ ansible_env.HOME }}"
+  loop: "{{ ai_skills_repos | default([]) }}"
+  loop_control:
+    label: "{{ item.repo }}"
+  when: (item.method | default('skills')) == 'skills'
+
+- name: Install AI skills via npx installer
+  ansible.builtin.shell: |
+    set -euo pipefail
+    npx -y github:{{ item.repo }} {{ item.installer_args | default('-- --only cursor') }}
+    touch "{{ ansible_env.HOME }}/.box-dev-playbook/ai-skills/{{ item.repo | replace('/', '_') }}_installer.done"
+  args:
+    creates: "{{ ansible_env.HOME }}/.box-dev-playbook/ai-skills/{{ item.repo | replace('/', '_') }}_installer.done"
+  environment:
+    HOME: "{{ ansible_env.HOME }}"
+  loop: "{{ ai_skills_repos | default([]) }}"
+  loop_control:
+    label: "{{ item.repo }}"
+  when: (item.method | default('skills')) == 'npx_installer'

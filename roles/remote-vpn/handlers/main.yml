@@ -1,0 +1,7 @@
+---
+- name: Restart remote VPN interface
+  become: true
+  ansible.builtin.systemd:
+    name: "wg-quick@{{ remote_vpn_interface }}"
+    state: restarted
+  when: ansible_os_family in ["Debian", "RedHat"]

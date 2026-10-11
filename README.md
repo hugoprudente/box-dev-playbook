@@ -62,9 +62,10 @@ ansible-playbook main.yml -i inventory --ask-become-pass
 
 ### Running a specific set of tagged tasks
 
-You can filter which part of the provisioning process to run by specifying a set of tags using `ansible-playbook`'s `--tags` flag. The tags available are `dotfiles`, `homebrew`.
+You can filter which part of the provisioning process to run by specifying a set of tags using `ansible-playbook`'s `--tags` flag. Examples: `base` (core OS packages and macOS setup), `dotfiles`, `homebrew`, `apt`, `dnf`.
 
 ```bash
+ansible-playbook main.yml -i inventory -K --tags "base"
 ansible-playbook main.yml -i inventory -K --tags "dotfiles,homebrew"
 ```
 
@@ -76,7 +77,12 @@ So you can customize your one using as base `default.config.yml` by creating a `
 
 ## Included Applications / Configuration (Default)
 
-.
+Base provisioning (`common` + roles tagged `base` in `main.yml`) installs the default CLI tools, Homebrew formulae/casks, and Mac App Store apps defined in `default.config.yml`.
+
+- [Base roles](docs/base-roles.md) — what each role does and which variables define packages
+- [Base install matrix](docs/base-install-matrix.md) — per-OS ✅ / ❌ / ⚠️ coverage for `common` and `base` defaults
+
+Optional roles (see `default.config.yml`): **kubernetes** (kind, clusterctl, cilium+hubble), **languages** (Node.js latest), **ai** ([skills repos](roles/ai/README.md)), **containerization** (Docker Compose / podman-compose), **remote-vpn** ([WireGuard server](roles/remote-vpn/README.md), off by default).
 
 ## Testing the Playbook
 

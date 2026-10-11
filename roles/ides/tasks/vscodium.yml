@@ -1,0 +1,50 @@
+---
+- name: (Darwin) Install VSCodium via Homebrew cask
+  community.general.homebrew_cask:
+    name: vscodium
+    state: present
+  when: ansible_os_family == "Darwin"
+
+- name: (Debian) Install VSCodium APT prerequisites
+  become: true
+  ansible.builtin.apt:
+    name:
+      - wget
+      - gpg
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: (Debian) Add VSCodium GPG key
+  become: true
+  ansible.builtin.shell: |
+    set -euo pipefail
+    wget -qO - https://gitlab.com/paulcarroty/vscodium-deb-rpm-repo/raw/master/pub.gpg \
+      | gpg --dearmor \
+      | tee /usr/share/keyrings/vscodium-archive-keyring.gpg > /dev/null
+  args:
+    creates: /usr/share/keyrings/vscodium-archive-keyring.gpg
+  when: ansible_os_family == "Debian"
+
+- name: (Debian) Add VSCodium APT repository
+  become: true
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/vscodium-archive-keyring.gpg] https://download.vscodium.com/debs vscodium main"
+    filename: vscodium
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: (Debian) Install VSCodium package
+  become: true
+  ansible.builtin.apt:
+    name: codium
+    state: present
+    update_cache: true
+  when: ansible_os_family == "Debian"
+
+- name: (RedHat) Install VSCodium via upstream script repo instructions
+  become: true
+  ansible.builtin.dnf:
+    name: codium
+    state: present
+  when: ansible_os_family == "RedHat"
+  ignore_errors: true

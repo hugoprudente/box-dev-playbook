@@ -81,6 +81,7 @@
           - docker-ce
           - docker-ce-cli
           - containerd.io
+          - docker-compose-plugin
         state: present
 
 - name: (RedHat) Install rootless Docker
@@ -107,6 +108,7 @@
           - containerd.io
           - docker-ce
           - docker-ce-cli
+          - docker-compose-plugin
           - docker-ce-rootless-extras
           - fuse-overlayfs
           - slirp4netns

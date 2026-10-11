@@ -2,5 +2,9 @@
 - name: Install AI pip packages
   ansible.builtin.include_tasks: pip.yml
 
+- name: Install AI agent skills
+  ansible.builtin.include_tasks: skills.yml
+  when: ai_skills_repos | default([]) | length > 0
+
 - name: Install Ollama and pull models
   ansible.builtin.include_tasks: ollama.yml

@@ -1,0 +1,20 @@
+---
+- name: (Darwin) Ensure Neovim via Homebrew
+  community.general.homebrew:
+    name: neovim
+    state: present
+  when: ansible_os_family == "Darwin"
+
+- name: (Debian) Ensure Neovim via APT
+  become: true
+  ansible.builtin.apt:
+    name: neovim
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: (RedHat) Ensure Neovim via DNF
+  become: true
+  ansible.builtin.dnf:
+    name: neovim
+    state: present
+  when: ansible_os_family == "RedHat"

@@ -1,0 +1,34 @@
+---
+- name: Generate peer private key when missing
+  ansible.builtin.command: wg genkey
+  register: remote_vpn_peer_generated_private
+  changed_when: false
+  when: remote_vpn_peer.public_key | default('') | length == 0
+  no_log: true
+
+- name: Derive peer public key when missing
+  ansible.builtin.shell: set -o pipefail && echo "{{ remote_vpn_peer_generated_private.stdout }}" | wg pubkey
+  register: remote_vpn_peer_generated_public
+  changed_when: false
+  when: remote_vpn_peer.public_key | default('') | length == 0
+  no_log: true
+
+- name: Accumulate resolved peer entry
+  ansible.builtin.set_fact:
+    remote_vpn_peers_resolved: >-
+      {{
+        (remote_vpn_peers_resolved | default([]))
+        + [ remote_vpn_peer | combine({
+            'private_key': (
+              remote_vpn_peer.private_key | default('')
+              if (remote_vpn_peer.private_key | default('') | length > 0)
+              else remote_vpn_peer_generated_private.stdout | default('')
+            ),
+            'public_key': (
+              remote_vpn_peer.public_key | default('')
+              if (remote_vpn_peer.public_key | default('') | length > 0)
+              else remote_vpn_peer_generated_public.stdout | default('')
+            )
+          }) ]
+      }}
+  no_log: true

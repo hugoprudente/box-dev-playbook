@@ -19,27 +19,32 @@
 
     - role: elliotweiser.osx-command-line-tools
       when: ansible_os_family == "Darwin"
-      tags: ['osx-ctl', 'osx']
+      tags: ['osx-ctl', 'osx', 'base']
     - role: geerlingguy.mac.homebrew
-      when: ansible_os_family == "Darwin"
-      tags: ['homebrew', 'osx']
-      when: ansible_distribution == 'MacOSX'
+      when:
+        - ansible_os_family == "Darwin"
+        - ansible_distribution == 'MacOSX'
+      tags: ['homebrew', 'osx', 'base']
     - role: geerlingguy.mac.mas
       when: (mas_installed_apps or mas_installed_app_ids) and ansible_os_family == "Darwin"
-      tags: ['mas', 'osx']
+      tags: ['mas', 'osx', 'base']
     - role: geerlingguy.mac.dock
       when: configure_dock and ansible_os_family == "Darwin"
-      tags: ['dock', 'osx']
+      tags: ['dock', 'osx', 'base']
 
     # Debian based Specific
     - role: apt
       when: ansible_os_family == "Debian"
-      tags: ['apt']
+      tags: ['apt', 'base']
 
     # RedHat based specifics
     - role: dnf
       when: ansible_os_family == "RedHat"
-      tags: ['dnf']
+      tags: ['dnf', 'base']
+
+    - role: ides
+      when: configure_ides
+      tags: ['ides', 'base']
 
     - role: dotfiles
       when: configure_dotfiles
@@ -67,6 +72,11 @@
     - role: andrewrothstein.terraform
       when: configure_terraform
       tags: ['terraform', 'iac']
+
+    - role: remote-vpn
+      when: configure_remote_vpn
+      become: true
+      tags: ['remote-vpn', 'network']
   tasks:
     - name: Install extra packages
       import_tasks: tasks/extra-packages.yml

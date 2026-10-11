@@ -63,3 +63,66 @@
   when: >
     cilium_installed_version.rc != 0
     or cilium_cli_version not in cilium_installed_version.stdout
+
+- name: hubble version
+  ansible.builtin.command: hubble version
+  register: hubble_installed_version
+  changed_when: false
+  failed_when: false
+
+- name: Get latest hubble CLI version
+  ansible.builtin.uri:
+    url: "{{ hubble_cli_version_url }}"
+    return_content: true
+  register: hubble_cli_stable_version
+
+- name: Set hubble CLI version fact
+  ansible.builtin.set_fact:
+    hubble_cli_version: "{{ hubble_cli_stable_version.content | trim }}"
+
+- name: (Darwin) Install Hubble via Homebrew
+  community.general.homebrew:
+    name: hubble
+    state: present
+  when:
+    - ansible_os_family == "Darwin"
+    - hubble_installed_version.rc != 0 or hubble_cli_version not in hubble_installed_version.stdout
+
+- name: (Linux) Install Hubble CLI via release tarball
+  when:
+    - ansible_os_family in ["Debian", "RedHat"]
+    - hubble_installed_version.rc != 0 or hubble_cli_version not in hubble_installed_version.stdout
+  block:
+    - name: hubble download tarball
+      ansible.builtin.get_url:
+        url: "{{ hubble_cli_base_url }}/{{ hubble_cli_version }}/hubble-linux-{{ common_arch }}.tar.gz"
+        dest: "/tmp/hubble-linux-{{ common_arch }}.tar.gz"
+        mode: "0644"
+
+    - name: hubble download checksum
+      ansible.builtin.get_url:
+        url: "{{ hubble_cli_base_url }}/{{ hubble_cli_version }}/hubble-linux-{{ common_arch }}.tar.gz.sha256sum"
+        dest: "/tmp/hubble-linux-{{ common_arch }}.tar.gz.sha256sum"
+        mode: "0644"
+
+    - name: hubble verify checksum
+      ansible.builtin.shell: |
+        cd /tmp && sha256sum --check hubble-linux-{{ common_arch }}.tar.gz.sha256sum
+      changed_when: false
+
+    - name: hubble extract to /usr/local/bin
+      become: true
+      ansible.builtin.unarchive:
+        src: "/tmp/hubble-linux-{{ common_arch }}.tar.gz"
+        dest: /usr/local/bin
+        remote_src: true
+
+    - name: hubble cleanup temp files
+      ansible.builtin.file:
+        path: "{{ cleanup_item }}"
+        state: absent
+      loop:
+        - "/tmp/hubble-linux-{{ common_arch }}.tar.gz"
+        - "/tmp/hubble-linux-{{ common_arch }}.tar.gz.sha256sum"
+      loop_control:
+        loop_var: cleanup_item

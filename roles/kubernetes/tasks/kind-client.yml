@@ -1,0 +1,47 @@
+---
+- name: kind version
+  ansible.builtin.command: kind version
+  register: kind_installed_version
+  changed_when: false
+  failed_when: false
+
+- name: Get latest kind release version
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/kubernetes-sigs/kind/releases/latest
+    return_content: true
+    headers:
+      Accept: application/vnd.github.v3+json
+  register: kind_latest_release
+
+- name: Set kind version fact
+  ansible.builtin.set_fact:
+    kind_version: "{{ kind_latest_release.json.tag_name }}"
+
+- name: (Darwin) Install kind via Homebrew
+  community.general.homebrew:
+    name: kind
+    state: present
+  when:
+    - ansible_os_family == "Darwin"
+    - kind_installed_version.rc != 0 or kind_version not in kind_installed_version.stdout
+
+- name: (Linux) Install kind via binary download
+  when:
+    - ansible_os_family in ["Debian", "RedHat"]
+    - kind_installed_version.rc != 0 or kind_version not in kind_installed_version.stdout
+  block:
+    - name: Download kind binary
+      ansible.builtin.get_url:
+        url: "https://github.com/kubernetes-sigs/kind/releases/download/{{ kind_version }}/kind-linux-{{ common_arch }}"
+        dest: /tmp/kind
+        mode: "0755"
+
+    - name: Install kind to /usr/local/bin
+      become: true
+      ansible.builtin.command: install -o root -g root -m 0755 /tmp/kind /usr/local/bin/kind
+      changed_when: true
+
+    - name: Cleanup kind temp file
+      ansible.builtin.file:
+        path: /tmp/kind
+        state: absent

@@ -51,7 +51,6 @@ homebrew_taps:
 homebrew_cask_appdir: /Applications
 homebrew_cask_apps:
   - rectangle
-  - vscodium
   - iterm2
 
 homebrew_installed_packages:
@@ -66,7 +65,6 @@ homebrew_installed_packages:
   - make
   - neovim
   - ripgrep
-  - node # used by neovim
   - tmux
   - vault
   - yq
@@ -160,6 +158,8 @@ kubernetes_extra_clis:
   - argocd
   - cilium
   - velero
+  - kind
+  - clusterctl
 
 # Krew plugins
 krew_plugins:
@@ -192,9 +192,21 @@ languages:
         - python3.12-numpy
   - name: go
     version: "1.17+"
+  - name: node
+    version: latest
+
+# IDEs (VSCodium, Zed, Neovim)
+configure_ides: true
 
 # AI
 configure_ai: true
+ai_skills_repos:
+  - repo: JuliusBrussee/caveman
+    method: skills
+    agents:
+      - cursor
+    global: true
+    extra_args: ""
 ai_pip_packages:
   - torch
   - torchvision
@@ -202,6 +214,16 @@ ai_pip_packages:
   - open-webui
 ai_ollama_models:
   - deepseek-r1:1.5b
+
+# Remote VPN — WireGuard server on this host (disabled by default)
+configure_remote_vpn: false
+remote_vpn_public_endpoint: ""
+remote_vpn_peers: []
+# Example:
+# remote_vpn_public_endpoint: "203.0.113.10"
+# remote_vpn_peers:
+#   - name: home-laptop
+#     address: 10.200.0.2/32
 
 #Terraform
 configure_terraform: false

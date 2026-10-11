@@ -1,0 +1,110 @@
+---
+- name: Require Linux for WireGuard server role
+  ansible.builtin.assert:
+    that:
+      - ansible_os_family in ["Debian", "RedHat"]
+    fail_msg: The remote-vpn role installs a WireGuard server on Linux hosts only.
+
+- name: Require public endpoint for remote VPN
+  ansible.builtin.assert:
+    that:
+      - remote_vpn_public_endpoint | length > 0
+    fail_msg: >-
+      Set remote_vpn_public_endpoint in config.yml to this host's public IP or DNS name.
+
+- name: Install WireGuard packages
+  become: true
+  ansible.builtin.package:
+    name: "{{ remote_vpn_packages }}"
+    state: present
+  vars:
+    remote_vpn_packages: >-
+      {{
+        ['wireguard-tools', 'wireguard']
+        if ansible_os_family in ['Debian', 'RedHat']
+        else ['wireguard-tools']
+      }}
+
+- name: Ensure WireGuard config directory exists
+  become: true
+  ansible.builtin.file:
+    path: /etc/wireguard
+    state: directory
+    mode: "0700"
+
+- name: Require server private key when not auto-generating
+  ansible.builtin.assert:
+    that:
+      - remote_vpn_server_private_key | length > 0
+    fail_msg: Set remote_vpn_server_private_key or enable remote_vpn_generate_server_keys.
+  when: not (remote_vpn_generate_server_keys | bool)
+
+- name: Generate server private key when requested
+  ansible.builtin.command: wg genkey
+  register: remote_vpn_generated_server_key
+  changed_when: false
+  when:
+    - remote_vpn_generate_server_keys | bool
+    - remote_vpn_server_private_key | length == 0
+  no_log: true
+
+- name: Set server private key fact
+  ansible.builtin.set_fact:
+    remote_vpn_server_private_key_effective: >-
+      {{
+        remote_vpn_server_private_key
+        if remote_vpn_server_private_key | length > 0
+        else remote_vpn_generated_server_key.stdout
+      }}
+  no_log: true
+
+- name: Derive server public key
+  ansible.builtin.shell: set -o pipefail && echo "{{ remote_vpn_server_private_key_effective }}" | wg pubkey
+  register: remote_vpn_server_public_key
+  changed_when: false
+  no_log: true
+
+- name: Initialize resolved peer list
+  ansible.builtin.set_fact:
+    remote_vpn_peers_resolved: []
+  when: remote_vpn_peers | length > 0
+
+- name: Prepare peer facts with generated keys when missing
+  ansible.builtin.include_tasks: peer-keys.yml
+  loop: "{{ remote_vpn_peers }}"
+  loop_control:
+    loop_var: remote_vpn_peer
+    index_var: remote_vpn_peer_index
+  when: remote_vpn_peers | length > 0
+
+- name: Deploy WireGuard server configuration
+  become: true
+  ansible.builtin.template:
+    src: wg-interface.conf.j2
+    dest: "/etc/wireguard/{{ remote_vpn_interface }}.conf"
+    mode: "0600"
+  notify: Restart remote VPN interface
+
+- name: Enable and start WireGuard interface
+  become: true
+  ansible.builtin.systemd:
+    name: "wg-quick@{{ remote_vpn_interface }}"
+    enabled: true
+    state: started
+  when: ansible_os_family in ["Debian", "RedHat"]
+
+- name: Ensure client config output directory exists
+  ansible.builtin.file:
+    path: "{{ remote_vpn_client_config_dir }}"
+    state: directory
+    mode: "0700"
+
+- name: Write WireGuard client configuration files
+  ansible.builtin.template:
+    src: wg-client.conf.j2
+    dest: "{{ remote_vpn_client_config_dir }}/{{ item.name }}.conf"
+    mode: "0600"
+  loop: "{{ remote_vpn_peers_resolved | default([]) }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when: remote_vpn_peers | length > 0

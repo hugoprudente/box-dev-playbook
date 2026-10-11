@@ -1,0 +1,12 @@
+---
+- name: Install Neovim where missing from base packages
+  ansible.builtin.include_tasks: neovim.yml
+  when: ides_install_neovim | bool
+
+- name: Install VSCodium
+  ansible.builtin.include_tasks: vscodium.yml
+  when: ides_install_vscodium | bool
+
+- name: Install Zed
+  ansible.builtin.include_tasks: zed.yml
+  when: ides_install_zed | bool

@@ -13,3 +13,6 @@
 
 - name: "Install container engine {{ containerization_engine_selected }}"
   ansible.builtin.include_tasks: "{{ containerization_engine_selected }}.yml"
+
+- name: Ensure Docker Compose or podman-compose for selected engine
+  ansible.builtin.include_tasks: compose.yml

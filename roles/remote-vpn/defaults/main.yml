@@ -1,0 +1,26 @@
+---
+configure_remote_vpn: false
+
+remote_vpn_interface: wg0
+remote_vpn_listen_port: 51820
+remote_vpn_server_address: 10.200.0.1/24
+
+# Public hostname or IP clients use to reach this machine (set in config.yml).
+remote_vpn_public_endpoint: ""
+
+remote_vpn_generate_server_keys: true
+remote_vpn_server_private_key: ""
+
+# Client configs written for import on home devices.
+remote_vpn_client_config_dir: "{{ ansible_env.HOME }}/wireguard-clients"
+
+remote_vpn_peers: []
+# Example peer (set public_key or leave empty to auto-generate):
+#   - name: home-laptop
+#     address: 10.200.0.2/32
+#     public_key: ""
+#     private_key: ""  # written to client config only when generated
+#     persistent_keepalive: 25
+
+# Routes clients may use to reach services on this host (AllowedIPs on client).
+remote_vpn_client_allowed_ips: "10.200.0.0/24"

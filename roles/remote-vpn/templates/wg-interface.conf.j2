@@ -1,0 +1,16 @@
+# Ansible managed — WireGuard server on {{ inventory_hostname }}
+[Interface]
+Address = {{ remote_vpn_server_address }}
+ListenPort = {{ remote_vpn_listen_port }}
+PrivateKey = {{ remote_vpn_server_private_key_effective }}
+
+{% for peer in remote_vpn_peers_resolved | default(remote_vpn_peers) %}
+[Peer]
+# {{ peer.name }}
+PublicKey = {{ peer.public_key }}
+AllowedIPs = {{ peer.address }}
+{% if peer.persistent_keepalive is defined %}
+PersistentKeepalive = {{ peer.persistent_keepalive }}
+{% endif %}
+
+{% endfor %}

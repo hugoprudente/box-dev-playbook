@@ -1,0 +1,14 @@
+---
+- name: (Darwin) Install Zed via Homebrew cask
+  community.general.homebrew_cask:
+    name: zed
+    state: present
+  when: ansible_os_family == "Darwin"
+
+- name: (Linux) Install Zed via official install script
+  ansible.builtin.shell: |
+    set -euo pipefail
+    curl -fsSL https://zed.dev/install.sh | bash
+  args:
+    creates: /usr/local/bin/zed
+  when: ansible_os_family in ["Debian", "RedHat"]

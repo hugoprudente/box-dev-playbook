@@ -1,0 +1,6 @@
+---
+configure_ides: true
+
+ides_install_vscodium: true
+ides_install_zed: true
+ides_install_neovim: true

@@ -1,0 +1,18 @@
+---
+- name: Ensure /usr/local/bin is in PATH via profile.d
+  become: true
+  ansible.builtin.copy:
+    dest: /etc/profile.d/local-bin.sh
+    content: |
+      if ! echo "$PATH" | grep -q "/usr/local/bin"; then
+        export PATH="/usr/local/bin:$PATH"
+      fi
+    mode: '0644'
+
+- name: Ensure /usr/local/bin is in sudoers secure_path
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers
+    regexp: '^Defaults\s+secure_path'
+    line: 'Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin'
+    validate: 'visudo -cf %s'

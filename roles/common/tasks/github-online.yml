@@ -1,0 +1,12 @@
+---
+- name: Check if github.com is accessible on the destination
+  ansible.builtin.uri:
+    url: "https://github.com"
+    timeout: 10
+  register: common_github_online
+  ignore_errors: true
+  changed_when: false
+
+- name: Set common offline flag from destination reachability
+  ansible.builtin.set_fact:
+    common_offline: "{{ common_github_online is failed }}"

@@ -1,0 +1,100 @@
+---
+# Install starship on Linux.
+# Online: https://starship.rs/install.sh
+# Offline: download release tarball on controller, copy binary to host.
+# See https://github.com/starship/starship/releases
+
+- name: Check if starship is installed
+  ansible.builtin.command: starship --version
+  register: common_starship_check
+  changed_when: false
+  failed_when: false
+
+- name: Install starship (online install script)
+  when:
+    - common_starship_check.rc != 0
+    - not common_offline
+  block:
+    - name: Fetch Starship install script
+      ansible.builtin.get_url:
+        url: https://starship.rs/install.sh
+        dest: /tmp/starship-install.sh
+        mode: "0755"
+
+    - name: Run Starship install script
+      become: true
+      ansible.builtin.command: /tmp/starship-install.sh -y -b {{ common_bin_dir }}
+      args:
+        creates: "{{ common_bin_dir }}/starship"
+
+    - name: Cleanup Starship install script
+      ansible.builtin.file:
+        path: /tmp/starship-install.sh
+        state: absent
+
+- name: Install starship (offline binary from controller)
+  when:
+    - common_starship_check.rc != 0
+    - common_offline
+  vars:
+    common_starship_tmp: "/tmp/starship-{{ inventory_hostname }}"
+  block:
+    - name: Resolve starship release version via GitHub API (controller)
+      ansible.builtin.uri:
+        url: https://api.github.com/repos/starship/starship/releases/latest
+        headers:
+          Accept: application/vnd.github.v3+json
+      delegate_to: localhost
+      become: false
+      register: common_starship_latest
+      failed_when: false
+
+    - name: Set starship version and arch facts
+      ansible.builtin.set_fact:
+        common_starship_resolved_version: >-
+          {{
+            (common_starship_latest.json | default({})).tag_name
+            | default('v' ~ common_starship_version)
+            | regex_replace('^v', '')
+          }}
+        common_starship_rust_arch: >-
+          {{ 'aarch64' if ansible_architecture in ['aarch64', 'arm64'] else 'x86_64' }}
+
+    - name: Ensure starship temp directory on controller
+      ansible.builtin.file:
+        path: "{{ common_starship_tmp }}"
+        state: directory
+        mode: "0755"
+      delegate_to: localhost
+      become: false
+
+    - name: Download starship release tarball on controller
+      ansible.builtin.get_url:
+        url: >-
+          {{ common_starship_repo }}/releases/download/v{{ common_starship_resolved_version }}/starship-{{ common_starship_rust_arch }}-unknown-linux-musl.tar.gz
+        dest: "{{ common_starship_tmp }}/starship.tar.gz"
+        mode: "0644"
+      delegate_to: localhost
+      become: false
+
+    - name: Extract starship binary on controller
+      ansible.builtin.unarchive:
+        src: "{{ common_starship_tmp }}/starship.tar.gz"
+        dest: "{{ common_starship_tmp }}"
+        remote_src: true
+      delegate_to: localhost
+      become: false
+
+    - name: Install starship binary on destination
+      become: true
+      ansible.builtin.copy:
+        src: "{{ common_starship_tmp }}/starship"
+        dest: "{{ common_bin_dir }}/starship"
+        mode: "0755"
+
+    - name: Cleanup starship temp files on controller
+      ansible.builtin.file:
+        path: "{{ common_starship_tmp }}"
+        state: absent
+      delegate_to: localhost
+      become: false

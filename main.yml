@@ -14,14 +14,18 @@
       tags: ['always']
 
   roles:
+    - role: common
+      tags: ['always']
+
     - role: elliotweiser.osx-command-line-tools
       when: ansible_os_family == "Darwin"
       tags: ['osx-ctl', 'osx']
     - role: geerlingguy.mac.homebrew
       when: ansible_os_family == "Darwin"
       tags: ['homebrew', 'osx']
+      when: ansible_distribution == 'MacOSX'
     - role: geerlingguy.mac.mas
-      when: mas_installed_apps or mas_installed_app_ids and ansible_os_family == "Darwin"
+      when: (mas_installed_apps or mas_installed_app_ids) and ansible_os_family == "Darwin"
       tags: ['mas', 'osx']
     - role: geerlingguy.mac.dock
       when: configure_dock and ansible_os_family == "Darwin"
@@ -42,10 +46,24 @@
       become: false
       tags: ['dotfiles']
 
+    - role: containerization
+      when: configure_containerization
+      tags: ['containerization', 'containers']
+
     # Tools, venvs, command lines and much more
     - role: kubernetes
       when: configure_kubernetes
-      tags: ['kubernetes', 'containers', 'k8s']
+      tags: ['kubernetes', 'k8s']
+
+    - role: languages
+      when: configure_languages
+      tags: ['languages']
+
+    - role: ai
+      when: configure_ai
+      become: false
+      tags: ['ai']
+
     - role: andrewrothstein.terraform
       when: configure_terraform
       tags: ['terraform', 'iac']

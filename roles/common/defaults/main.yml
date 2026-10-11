@@ -1,0 +1,16 @@
+---
+# defaults file for common
+
+common_bin_dir: /usr/local/bin
+
+# Install starship / direnv via scripts (online) or GitHub binaries (offline).
+# Darwin uses Homebrew (see default.config.yml homebrew_installed_packages).
+common_install_starship: true
+common_install_direnv: true
+
+# Pinned fallbacks when GitHub API is unreachable from the controller.
+common_starship_version: "1.26.0"
+common_direnv_version: "2.37.1"
+
+common_starship_repo: "https://github.com/starship/starship"
+common_direnv_repo: "https://github.com/direnv/direnv"

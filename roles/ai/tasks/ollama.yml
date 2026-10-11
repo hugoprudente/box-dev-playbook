@@ -1,0 +1,32 @@
+---
+- name: (Debian) Install zstd prerequisite
+  become: true
+  ansible.builtin.apt:
+    name: zstd
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: (RedHat) Install zstd prerequisite
+  become: true
+  ansible.builtin.dnf:
+    name: zstd
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Check if Ollama is installed
+  ansible.builtin.command: which ollama
+  register: ollama_check
+  changed_when: false
+  failed_when: false
+
+- name: Install Ollama
+  ansible.builtin.shell:
+    cmd: curl -fsSL https://ollama.com/install.sh | sh
+  when: ollama_check.rc != 0
+
+- name: Pull Ollama models
+  become: false
+  ansible.builtin.command: "ollama pull {{ item }}"
+  loop: "{{ ai_ollama_models }}"
+  register: ollama_pull
+  changed_when: "'pulling' in ollama_pull.stdout"

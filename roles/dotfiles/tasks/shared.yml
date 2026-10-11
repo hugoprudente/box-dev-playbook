@@ -1,0 +1,59 @@
+---
+- name: Stat configured dotfiles in the home folder
+  ansible.builtin.stat:
+    path: "{{ dotfiles_home }}/{{ item.dest }}"
+  register: dotfiles_stat
+  loop: "{{ dotfiles_files }}"
+  loop_control:
+    label: "{{ item.dest }}"
+
+- name: Backup existing dotfiles that are regular files
+  ansible.builtin.copy:
+    src: "{{ dotfiles_home }}/{{ item.item.dest }}"
+    dest: "{{ dotfiles_home }}/{{ item.item.dest }}.bak"
+    remote_src: true
+    mode: preserve
+  when:
+    - item.stat.exists
+    - item.stat.isreg
+  loop: "{{ dotfiles_stat.results }}"
+  loop_control:
+    label: "{{ item.item.dest }}"
+
+- name: Link dotfiles into home folder
+  ansible.builtin.file:
+    src: "{{ dotfiles_repo_local_destination }}/{{ item.orig }}"
+    dest: "{{ dotfiles_home }}/{{ item.dest }}"
+    state: link
+    force: true
+  loop: "{{ dotfiles_files }}"
+  loop_control:
+    label: "{{ item.dest }}"
+
+- name: Configure Oh My Zsh
+  when:
+    - dotfiles_configure_ohmyzsh
+    - not dotfiles_offline
+  block:
+    - name: Cloning oh-my-zsh
+      ansible.builtin.git:
+        repo: https://github.com/robbyrussell/oh-my-zsh
+        dest: "~/.oh-my-zsh"
+      register: cloning
+
+    - name: Creating new ~/.zshrc
+      ansible.builtin.copy:
+        src: ~/.oh-my-zsh/templates/zshrc.zsh-template
+        dest: ~/.zshrc
+      when: cloning is success
+
+- name: Configure Starship shell init
+  when: dotfiles_configure_starship
+  become: true
+  ansible.builtin.copy:
+    dest: /etc/profile.d/starship.sh
+    content: |
+      if command -v starship >/dev/null 2>&1; then
+        eval "$(starship init bash)"
+      fi
+    mode: '0644'

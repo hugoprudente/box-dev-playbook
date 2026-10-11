@@ -1,0 +1,11 @@
+---
+configure_ai: false
+
+ai_pip_packages:
+  - torch
+  - torchvision
+  - transformers
+  - open-webui
+
+ai_ollama_models:
+  - deepseek-r1:1.5b

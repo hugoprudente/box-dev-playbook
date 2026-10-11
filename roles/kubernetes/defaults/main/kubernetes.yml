@@ -1,0 +1,6 @@
+---
+kubernetes_extra_clis:
+  - helm
+  - krew
+# - velero
+# - cilium

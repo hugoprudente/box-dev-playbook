@@ -1,14 +1,18 @@
 ---
 - name: Check if github.com is accessible on the destination
-  register: github_online
-  uri:
+  ansible.builtin.uri:
     url: "https://github.com"
+  register: dotfiles_github_online
   ignore_errors: true
 
+- name: Set dotfiles offline flag
+  ansible.builtin.set_fact:
+    dotfiles_offline: "{{ dotfiles_github_online.failed | default(false) }}"
+
 - name: Include the online tasks
-  when: not github_online.failed
+  when: not dotfiles_offline
   ansible.builtin.include_tasks: online.yml
 
 - name: Include the offline tasks
-  when: github_online.failed
+  when: dotfiles_offline
   ansible.builtin.include_tasks: offline.yml

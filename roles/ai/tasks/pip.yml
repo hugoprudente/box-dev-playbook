@@ -1,0 +1,6 @@
+---
+- name: Install AI pip packages at user level
+  become: false
+  ansible.builtin.pip:
+    name: "{{ ai_pip_packages }}"
+    state: present

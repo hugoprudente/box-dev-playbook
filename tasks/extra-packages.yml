@@ -16,13 +16,16 @@
     executable: "{{ item.executable | default(omit) }}"
   loop: "{{ npm_packages }}"
 
-- name: Install global Pip packages.
+- name: Install Pip packages into the personal Python venv
+  become: true
+  become_user: "{{ languages_user | default(ansible_user | default(ansible_user_id)) }}"
   ansible.builtin.pip:
     name: "{{ item.name | default(item) }}"
-    state: "{{ item.state | default('present') }}"
+    state: "{{ item.state | default(pip_default_state | default('present')) }}"
     version: "{{ item.version | default(omit) }}"
-    executable: "{{ item.executable | default('pip3') }}"
+    executable: "{{ item.executable | default(pip_default_executable | default('pip3')) }}"
   loop: "{{ pip_packages }}"
+  when: pip_packages | length > 0
 
 - name: Install global Ruby gems.
   community.general.gem:

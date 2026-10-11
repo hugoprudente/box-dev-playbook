@@ -1,0 +1,29 @@
+---
+# Darwin
+- name: "Install Go via Homebrew"
+  community.general.homebrew:
+    name: "go"
+    state: present
+  when: ansible_os_family == "Darwin"
+
+# Debian
+- name: "Install Go via APT"
+  become: true
+  ansible.builtin.apt:
+    name: "{{ go_apt_base + (lang.extra_packages.apt | default([])) }}"
+    state: present
+  vars:
+    go_apt_base:
+      - golang
+  when: ansible_os_family == "Debian"
+
+# RedHat
+- name: "Install Go via DNF"
+  become: true
+  ansible.builtin.dnf:
+    name: "{{ go_dnf_base + (lang.extra_packages.dnf | default([])) }}"
+    state: present
+  vars:
+    go_dnf_base:
+      - golang
+  when: ansible_os_family == "RedHat"

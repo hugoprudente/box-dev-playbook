@@ -1,0 +1,27 @@
+---
+- name: Include common setup
+  ansible.builtin.include_tasks: setup.yml
+
+- name: Include GitHub reachability check
+  ansible.builtin.include_tasks: github-online.yml
+  when: ansible_os_family in ["Debian", "RedHat"]
+
+- name: Include RedHat specific tasks
+  ansible.builtin.include_tasks: redhat.yml
+  when: ansible_os_family == "RedHat"
+
+- name: Include starship install
+  ansible.builtin.include_tasks: starship.yml
+  when:
+    - common_install_starship
+    - ansible_os_family in ["Debian", "RedHat"]
+
+- name: Include direnv install
+  ansible.builtin.include_tasks: direnv.yml
+  when:
+    - common_install_direnv
+    - ansible_os_family in ["Debian", "RedHat"]
+
+- name: Include funcoeszz
+  ansible.builtin.include_tasks: funcoeszz.yml
+  when: configure_funcoeszz

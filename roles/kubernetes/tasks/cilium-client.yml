@@ -1,0 +1,65 @@
+---
+- name: cilium version
+  command: cilium version --client
+  register: cilium_installed_version
+  changed_when: false
+  failed_when: false
+
+- name: Get latest cilium CLI version
+  ansible.builtin.uri:
+    url: "{{ cilium_cli_version_url }}"
+    return_content: true
+  register: cilium_cli_stable_version
+
+- name: Set cilium CLI version fact
+  ansible.builtin.set_fact:
+    cilium_cli_version: "{{ cilium_cli_stable_version.content | trim }}"
+
+- block:
+    - name: cilium download tarball
+      ansible.builtin.get_url:
+        url: "{{ cilium_cli_base_url }}/{{ cilium_cli_version }}/cilium-{{ common_os }}-{{ common_arch }}.tar.gz"
+        dest: "/tmp/cilium-{{ common_os }}-{{ common_arch }}.tar.gz"
+        mode: '0644'
+
+    - name: cilium download checksum
+      ansible.builtin.get_url:
+        url: "{{ cilium_cli_base_url }}/{{ cilium_cli_version }}/cilium-{{ common_os }}-{{ common_arch }}.tar.gz.sha256sum"
+        dest: "/tmp/cilium-{{ common_os }}-{{ common_arch }}.tar.gz.sha256sum"
+        mode: '0644'
+
+    - name: cilium verify checksum
+      ansible.builtin.shell: |
+        cd /tmp && sha256sum --check cilium-{{ common_os }}-{{ common_arch }}.tar.gz.sha256sum
+      args:
+        chdir: /tmp
+      when: common_os == "linux"
+      changed_when: false
+
+    - name: cilium verify checksum (Darwin)
+      ansible.builtin.shell: |
+        cd /tmp && shasum -a 256 -c cilium-{{ common_os }}-{{ common_arch }}.tar.gz.sha256sum
+      args:
+        chdir: /tmp
+      when: common_os == "darwin"
+      changed_when: false
+
+    - name: cilium extract to /usr/local/bin
+      become: true
+      ansible.builtin.unarchive:
+        src: "/tmp/cilium-{{ common_os }}-{{ common_arch }}.tar.gz"
+        dest: /usr/local/bin
+        remote_src: true
+
+    - name: cilium cleanup temp files
+      ansible.builtin.file:
+        path: "{{ cleanup_item }}"
+        state: absent
+      loop:
+        - "/tmp/cilium-{{ common_os }}-{{ common_arch }}.tar.gz"
+        - "/tmp/cilium-{{ common_os }}-{{ common_arch }}.tar.gz.sha256sum"
+      loop_control:
+        loop_var: cleanup_item
+  when: >
+    cilium_installed_version.rc != 0
+    or cilium_cli_version not in cilium_installed_version.stdout

@@ -1,0 +1,17 @@
+---
+- name: Check funcoeszz version
+  ansible.builtin.command: funcoeszz --version
+  register: funcoeszz_version_check
+  changed_when: false
+  failed_when: false
+
+- name: Install funcoeszz {{ funcoeszz_version }}
+  become: true
+  ansible.builtin.get_url:
+    url: "https://funcoeszz.net/download/funcoeszz-{{ funcoeszz_version }}.sh"
+    dest: /usr/local/bin/funcoeszz
+    mode: '0755'
+    force: true
+  when: >-
+    funcoeszz_version_check.rc != 0 or
+    funcoeszz_version not in funcoeszz_version_check.stdout

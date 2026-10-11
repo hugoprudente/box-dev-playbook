@@ -1,6 +1,0 @@
----
-kubernetes_installed_packages:
-  - kubectx
-  - kubectl
-  - helm
-kubernetes_installed_packages_state: present

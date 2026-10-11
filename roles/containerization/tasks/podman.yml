@@ -1,0 +1,79 @@
+---
+- name: (Darwin) Install Podman via Homebrew
+  community.general.homebrew:
+    name:
+      - podman
+      - podman-compose
+      - qemu
+    state: present
+  when: ansible_os_family == "Darwin"
+
+- name: (Debian) Install Podman via APT
+  become: true
+  ansible.builtin.apt:
+    name:
+      - podman
+      - podman-compose
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: (RedHat) Install Podman via DNF
+  become: true
+  when: ansible_os_family == "RedHat" and not containerization_rootless
+  ansible.builtin.dnf:
+    name:
+      - podman
+      - podman-compose
+    state: present
+
+- name: (RedHat) Install rootless Podman
+  become: true
+  when: ansible_os_family == "RedHat" and containerization_rootless
+  block:
+    - name: Uninstall Docker packages
+      ansible.builtin.dnf:
+        name:
+          - docker-ce
+          - containerd.io
+          - docker-ce-cli
+        state: absent
+
+    - name: Install Podman packages
+      ansible.builtin.dnf:
+        name:
+          - podman
+          - podman-compose
+          - podman-docker
+        state: present
+
+    - name: Start the Podman daemon
+      ansible.builtin.service:
+        name: podman
+        state: started
+
+    - name: Ensure podman group exists
+      ansible.builtin.group:
+        name: podman
+        state: present
+
+    - name: Set podman binary group
+      ansible.builtin.file:
+        path: /usr/bin/podman
+        owner: root
+        group: podman
+        mode: "0755"
+
+    - name: Configure storage.conf for rootless overlay
+      ansible.builtin.template:
+        dest: /etc/containers/storage.conf
+        src: storage.conf.j2
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Configure rootless Podman for each user
+      ansible.builtin.include_tasks: podman-user.yml
+      loop: "{{ containerization_users }}"
+      loop_control:
+        loop_var: containerization_user
+        index_var: containerization_user_index

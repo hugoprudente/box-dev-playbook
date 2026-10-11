@@ -1,0 +1,110 @@
+---
+# Install a versioned Python interpreter and a per-user venv at
+# ~<languages_user>/venv/python<version>.
+# Same version → upgrade packages in place. New version → new venv directory.
+#
+# lang.version may be a string ("3.12") or a per-OS-family map:
+#   version:
+#     Debian: "3.12"
+#     RedHat: "3.11"
+#     Darwin: "3.12"
+#     default: "3.12"
+
+- name: Ensure ACL support for becoming an unprivileged user
+  become: true
+  ansible.builtin.package:
+    name: acl
+    state: present
+  when: ansible_os_family in ["Debian", "RedHat"]
+
+- name: Resolve Python version for this OS family
+  ansible.builtin.set_fact:
+    languages_python_version: >-
+      {{
+        (
+          lang.version[ansible_os_family]
+          | default(lang.version['default'])
+          | default(omit)
+        )
+        if (lang.version is mapping)
+        else lang.version
+      }}
+
+- name: Fail when no Python version is defined for this OS
+  ansible.builtin.assert:
+    that:
+      - languages_python_version is defined
+      - languages_python_version | length > 0
+    fail_msg: >-
+      languages.python.version has no entry for {{ ansible_os_family }}
+      and no default/string fallback.
+
+- name: Set Python interpreter and venv path facts
+  ansible.builtin.set_fact:
+    languages_python_bin: "python{{ languages_python_version }}"
+    languages_python_venv: "~{{ languages_user }}/{{ languages_venv_dirname }}/python{{ languages_python_version }}"
+    languages_python_pip_executable: "{{ ansible_user_dir }}/{{ languages_venv_dirname }}/python{{ languages_python_version }}/bin/pip"
+
+# Darwin
+- name: Install Python via Homebrew
+  community.general.homebrew:
+    name: "python@{{ languages_python_version }}"
+    state: present
+  when: ansible_os_family == "Darwin"
+
+# Debian
+- name: Install Python via APT
+  become: true
+  ansible.builtin.apt:
+    name: "{{ languages_python_apt_pkgs + (lang.extra_packages.apt | default([])) }}"
+    state: present
+  vars:
+    languages_python_apt_pkgs:
+      - "python{{ languages_python_version }}"
+      - "python{{ languages_python_version }}-dev"
+      - "python{{ languages_python_version }}-venv"
+  when: ansible_os_family == "Debian"
+
+# RedHat
+- name: Install Python via DNF
+  become: true
+  ansible.builtin.dnf:
+    name: "{{ languages_python_dnf_pkgs + (lang.extra_packages.dnf | default([])) }}"
+    state: present
+  vars:
+    languages_python_dnf_pkgs:
+      - "python{{ languages_python_version }}"
+      - "python{{ languages_python_version }}-devel"
+      - "python{{ languages_python_version }}-pip"
+  when: ansible_os_family == "RedHat"
+
+- name: Resolve absolute Python binary for venv creation
+  ansible.builtin.command:
+    argv:
+      - which
+      - "{{ languages_python_bin }}"
+  register: languages_python_which
+  changed_when: false
+  failed_when: languages_python_which.rc != 0 or languages_python_which.stdout | length == 0
+
+- name: Ensure venv base directory exists for target user
+  become: true
+  become_user: "{{ languages_user }}"
+  ansible.builtin.file:
+    path: "~{{ languages_user }}/{{ languages_venv_dirname }}"
+    state: directory
+    mode: "0755"
+
+- name: Create or update versioned Python venv for target user
+  become: true
+  become_user: "{{ languages_user }}"
+  ansible.builtin.pip:
+    name: "{{ languages_python_venv_packages + (lang.packages | default([])) }}"
+    virtualenv: "{{ languages_python_venv }}"
+    virtualenv_command: "{{ languages_python_which.stdout }} -m venv"
+    state: present
+
+- name: Record default Python venv for profile.d
+  ansible.builtin.set_fact:
+    languages_python_default_venv: "python{{ languages_python_version }}"
+  when: languages_python_default_venv is not defined

@@ -1,0 +1,92 @@
+---
+- name: "Look up the account for {{ containerization_user }}"
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ containerization_user }}"
+
+- name: "Set rootless facts for {{ containerization_user }}"
+  ansible.builtin.set_fact:
+    containerization_uid: >-
+      {{ ansible_facts.getent_passwd[containerization_user][1] }}
+    containerization_home: >-
+      {{ ansible_facts.getent_passwd[containerization_user][4] }}
+
+- name: "Ensure subuid/subgid ranges for {{ containerization_user }}"
+  become: true
+  ansible.builtin.lineinfile:
+    path: "{{ item }}"
+    line: >-
+      {{ containerization_user }}:{{ 100000
+         + containerization_user_index * 65536 }}:65536
+    regexp: "^{{ containerization_user }}:"
+    create: true
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - /etc/subuid
+    - /etc/subgid
+
+- name: "Enable lingering for {{ containerization_user }}"
+  become: true
+  ansible.builtin.command: "loginctl enable-linger {{ containerization_user }}"
+  args:
+    creates: "/var/lib/systemd/linger/{{ containerization_user }}"
+
+- name: "Wait for the user D-Bus socket of {{ containerization_user }}"
+  ansible.builtin.wait_for:
+    path: "/run/user/{{ containerization_uid }}/bus"
+    timeout: 30
+
+- name: "Install rootless Docker user service for {{ containerization_user }}"
+  become: true
+  become_user: "{{ containerization_user }}"
+  ansible.builtin.command:
+    cmd: dockerd-rootless-setuptool.sh install
+    creates: "{{ containerization_home }}/.config/systemd/user/docker.service"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ containerization_uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ containerization_uid }}/bus"
+    PATH: /usr/bin:/bin
+
+- name: "Enable and start rootless Docker for {{ containerization_user }}"
+  become: true
+  become_user: "{{ containerization_user }}"
+  ansible.builtin.systemd_service:
+    name: docker
+    scope: user
+    enabled: true
+    state: started
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ containerization_uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ containerization_uid }}/bus"
+
+- name: "Log Docker into registries for {{ containerization_user }}"
+  become: true
+  become_user: "{{ containerization_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ containerization_uid }}"
+    DOCKER_HOST: "unix:///run/user/{{ containerization_uid }}/docker.sock"
+  ansible.builtin.command:
+    cmd: >-
+      docker login
+         --username {{ containerization_artifactory_username }}
+         --password {{ containerization_artifactory_password }}
+      {{ item }}
+  loop: "{{ containerization_artifactory_registries }}"
+  changed_when: false
+  no_log: true
+  when: containerization_artifactory_login
+
+- name: "Pull images for {{ containerization_user }}"
+  become: true
+  become_user: "{{ containerization_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ containerization_uid }}"
+    DOCKER_HOST: "unix:///run/user/{{ containerization_uid }}/docker.sock"
+  ansible.builtin.command:
+    cmd: docker pull {{ item }}
+  loop: "{{ containerization_pull_images }}"
+  register: containerization_image_pull
+  changed_when: "'Downloaded newer image' in containerization_image_pull.stdout"
+  when: containerization_pull_images | length > 0

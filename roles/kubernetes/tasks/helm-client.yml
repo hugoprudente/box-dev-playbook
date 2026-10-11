@@ -1,0 +1,49 @@
+---
+- name: helm version
+  command: helm version --short
+  register: helm_installed_version
+  changed_when: false
+  failed_when: false
+
+- name: Get latest helm release version
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/helm/helm/releases/latest
+    return_content: true
+    headers:
+      Accept: "application/vnd.github.v3+json"
+  register: helm_latest_release
+
+- name: Set helm version fact
+  ansible.builtin.set_fact:
+    helm_latest_version: "{{ helm_latest_release.json.tag_name }}"
+
+# Darwin
+- name: (Darwin) Install Helm via Homebrew
+  community.general.homebrew:
+    name: helm
+    state: present
+  when:
+    - ansible_os_family == "Darwin"
+    - helm_installed_version.rc != 0 or helm_latest_version not in helm_installed_version.stdout
+
+# Linux
+- name: (Linux) Install Helm via install script
+  when:
+    - ansible_os_family in ["Debian", "RedHat"]
+    - helm_installed_version.rc != 0 or helm_latest_version not in helm_installed_version.stdout
+  block:
+    - name: Download Helm install script
+      ansible.builtin.get_url:
+        url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4
+        dest: /tmp/get_helm.sh
+        mode: '0700'
+
+    - name: Run Helm install script
+      become: true
+      ansible.builtin.command: /tmp/get_helm.sh
+      changed_when: true
+
+    - name: Cleanup Helm install script
+      ansible.builtin.file:
+        path: /tmp/get_helm.sh
+        state: absent

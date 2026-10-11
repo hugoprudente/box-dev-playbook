@@ -1,0 +1,38 @@
+---
+- name: argocd version
+  command: argocd version --client --short
+  register: argocd_installed_version
+  changed_when: false
+  failed_when: false
+
+- name: Get latest argocd release version
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/argoproj/argo-cd/releases/latest
+    return_content: true
+    headers:
+      Accept: "application/vnd.github.v3+json"
+  register: argocd_latest_release
+
+- name: Set argocd version fact
+  ansible.builtin.set_fact:
+    argocd_version: "{{ argocd_latest_release.json.tag_name }}"
+
+- name: Install argocd CLI
+  when:
+    - argocd_installed_version.rc != 0 or argocd_version not in argocd_installed_version.stdout
+  block:
+    - name: Download argocd binary
+      ansible.builtin.get_url:
+        url: "https://github.com/argoproj/argo-cd/releases/download/{{ argocd_version }}/argocd-{{ common_os }}-{{ common_arch }}"
+        dest: /tmp/argocd
+        mode: '0755'
+
+    - name: Install argocd to /usr/local/bin
+      become: true
+      ansible.builtin.command: install -m 555 /tmp/argocd /usr/local/bin/argocd
+      changed_when: true
+
+    - name: Cleanup argocd temp file
+      ansible.builtin.file:
+        path: /tmp/argocd
+        state: absent

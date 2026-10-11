@@ -1,0 +1,23 @@
+---
+configure_containerization: false
+
+containerization_engine: podman
+# podman | docker
+
+# Debian/Ubuntu repos do not ship podman/podman-compose on every release,
+# so the Debian family falls back to docker unless overridden.
+containerization_engine_debian: docker
+
+# Rootless setup (RedHat family). When false, installs the engine system-wide.
+containerization_rootless: true
+
+# Users that get rootless container configuration.
+containerization_users:
+  - "{{ ansible_user_id }}"
+
+# Optional registry login and image pulls (off by default).
+containerization_artifactory_login: false
+containerization_artifactory_username: ""
+containerization_artifactory_password: ""
+containerization_artifactory_registries: []
+containerization_pull_images: []

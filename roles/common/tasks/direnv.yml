@@ -1,0 +1,85 @@
+---
+# Install direnv on Linux via GitHub release binaries.
+# Online: download on the destination.
+# Offline: download on the controller, then copy.
+# See https://direnv.net/docs/installation.html
+
+- name: Check if direnv is installed
+  ansible.builtin.command: direnv version
+  register: common_direnv_check
+  changed_when: false
+  failed_when: false
+
+- name: Resolve direnv release version via GitHub API (controller)
+  when: common_direnv_check.rc != 0
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/direnv/direnv/releases/latest
+    headers:
+      Accept: application/vnd.github.v3+json
+  delegate_to: localhost
+  become: false
+  register: common_direnv_latest
+  failed_when: false
+
+- name: Set direnv version and download URL facts
+  when: common_direnv_check.rc != 0
+  ansible.builtin.set_fact:
+    common_direnv_resolved_version: >-
+      {{
+        (common_direnv_latest.json | default({})).tag_name
+        | default('v' ~ common_direnv_version)
+        | regex_replace('^v', '')
+      }}
+
+- name: Set direnv download URL fact
+  when: common_direnv_check.rc != 0
+  ansible.builtin.set_fact:
+    common_direnv_url: >-
+      {{ common_direnv_repo }}/releases/download/v{{ common_direnv_resolved_version }}/direnv.{{ common_os }}-{{ common_arch }}
+
+- name: Install direnv (online binary download)
+  when:
+    - common_direnv_check.rc != 0
+    - not common_offline
+  become: true
+  ansible.builtin.get_url:
+    url: "{{ common_direnv_url }}"
+    dest: "{{ common_bin_dir }}/direnv"
+    mode: "0755"
+
+- name: Install direnv (offline binary from controller)
+  when:
+    - common_direnv_check.rc != 0
+    - common_offline
+  vars:
+    common_direnv_tmp: "/tmp/direnv-{{ inventory_hostname }}"
+  block:
+    - name: Ensure direnv temp directory on controller
+      ansible.builtin.file:
+        path: "{{ common_direnv_tmp }}"
+        state: directory
+        mode: "0755"
+      delegate_to: localhost
+      become: false
+
+    - name: Download direnv binary on controller
+      ansible.builtin.get_url:
+        url: "{{ common_direnv_url }}"
+        dest: "{{ common_direnv_tmp }}/direnv"
+        mode: "0755"
+      delegate_to: localhost
+      become: false
+
+    - name: Install direnv binary on destination
+      become: true
+      ansible.builtin.copy:
+        src: "{{ common_direnv_tmp }}/direnv"
+        dest: "{{ common_bin_dir }}/direnv"
+        mode: "0755"
+
+    - name: Cleanup direnv temp files on controller
+      ansible.builtin.file:
+        path: "{{ common_direnv_tmp }}"
+        state: absent
+      delegate_to: localhost
+      become: false

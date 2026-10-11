@@ -5,37 +5,59 @@
   changed_when: false
   failed_when: false
 
-- block:
-    - name: check operating system
-      shell: uname
-      ignore_errors: yes
-      register: uname_result
+- name: Get latest velero release version
+  ansible.builtin.uri:
+    url: "{{ velero_releases_url }}"
+    return_content: true
+    headers:
+      Accept: "application/vnd.github.v3+json"
+  register: velero_latest_release
 
-    - name: velero fetch_distribution
-      set_fact:
-        velero_distribution: "{{ uname_result.stdout | lower }}"
+- name: Set velero version fact
+  ansible.builtin.set_fact:
+    velero_version: "{{ velero_latest_release.json.tag_name }}"
 
+# Darwin
+- name: (Darwin) Install Velero via Homebrew
+  community.general.homebrew:
+    name: velero
+    state: present
+  when:
+    - ansible_os_family == "Darwin"
+    - velero_installed_version.rc != 0 or velero_version not in velero_installed_version.stdout
+
+# Linux
+- name: (Linux) Install Velero via binary download
+  when:
+    - ansible_os_family in ["Debian", "RedHat"]
+    - velero_installed_version.rc != 0 or velero_version not in velero_installed_version.stdout
+  block:
     - name: velero download
-      get_url:
-        url: "{{ velero_url }}"
-        dest: /tmp
-        checksum: "{{ velero_checksum[velero_distribution] }}"
+      ansible.builtin.get_url:
+        url: "{{ velero_base_url }}/{{ velero_version }}/velero-{{ velero_version }}-linux-{{ common_arch }}.tar.gz"
+        dest: "/tmp/velero-{{ velero_version }}-linux-{{ common_arch }}.tar.gz"
+        mode: '0644'
 
-    - block:
-        - name: velero unarchive
-          unarchive:
-            src: "/tmp/{{ velero_pkg_ext }}"
-            dest: /tmp
-            remote_src: true
-        - name: velero executable bin for every user
-          copy:
-            src: "/tmp/{{ velero_pkg_bin }}"
-            dest: "{{ velero_bin }}"
-            remote_src: true
-            owner: root
-            group: root
-            mode: '0755'
+    - name: velero unarchive
+      ansible.builtin.unarchive:
+        src: "/tmp/velero-{{ velero_version }}-linux-{{ common_arch }}.tar.gz"
+        dest: /tmp
+        remote_src: true
+
+    - name: velero install binary
       become: true
-  when: >
-    velero_installed_version.stdout is not defined
-    or velero_version not in velero_installed_version.stdout
+      ansible.builtin.copy:
+        src: "/tmp/velero-{{ velero_version }}-linux-{{ common_arch }}/velero"
+        dest: /usr/local/bin/velero
+        remote_src: true
+        mode: '0755'
+
+    - name: velero cleanup temp files
+      ansible.builtin.file:
+        path: "{{ cleanup_item }}"
+        state: absent
+      loop:
+        - "/tmp/velero-{{ velero_version }}-linux-{{ common_arch }}.tar.gz"
+        - "/tmp/velero-{{ velero_version }}-linux-{{ common_arch }}"
+      loop_control:
+        loop_var: cleanup_item

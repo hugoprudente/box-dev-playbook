@@ -1,0 +1,153 @@
+---
+- name: (Darwin) Install Docker via Homebrew cask
+  community.general.homebrew_cask:
+    name: docker
+    state: present
+  when: ansible_os_family == "Darwin"
+
+- name: (Debian) Install Docker via APT
+  become: true
+  when: ansible_os_family == "Debian"
+  block:
+    - name: Install Docker prerequisites
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+        state: present
+
+    - name: Ensure apt keyring directory exists
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+
+    - name: Add Docker GPG key
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode: "0644"
+
+    - name: Add Docker repository
+      ansible.builtin.apt_repository:
+        repo: >-
+          deb [arch={{ 'arm64' if ansible_architecture in ['aarch64', 'arm64'] else 'amd64' }}
+          signed-by=/etc/apt/keyrings/docker.asc]
+          https://download.docker.com/linux/{{ ansible_distribution | lower }}
+          {{ ansible_distribution_release }} stable
+        filename: docker
+        state: present
+        update_cache: true
+
+    - name: Install Docker Engine
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+
+    - name: Enable the Docker service
+      ansible.builtin.systemd_service:
+        name: docker
+        enabled: true
+        state: started
+
+    - name: Add users to the docker group
+      ansible.builtin.user:
+        name: "{{ containerization_user }}"
+        groups: docker
+        append: true
+      loop: "{{ containerization_users }}"
+      loop_control:
+        loop_var: containerization_user
+
+- name: (RedHat) Install Docker via DNF
+  become: true
+  when: ansible_os_family == "RedHat" and not containerization_rootless
+  block:
+    - name: Add Docker repository
+      ansible.builtin.command: >
+        dnf config-manager --add-repo
+        https://download.docker.com/linux/{{ ansible_distribution | lower }}/docker-ce.repo
+      changed_when: true
+
+    - name: Install Docker Engine
+      ansible.builtin.dnf:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
+
+- name: (RedHat) Install rootless Docker
+  become: true
+  when: ansible_os_family == "RedHat" and containerization_rootless
+  block:
+    - name: Uninstall Podman packages
+      ansible.builtin.dnf:
+        name:
+          - podman
+          - podman-compose
+          - podman-docker
+        state: absent
+
+    - name: Add Docker repository
+      ansible.builtin.command: >
+        dnf config-manager --add-repo
+        https://download.docker.com/linux/{{ ansible_distribution | lower }}/docker-ce.repo
+      changed_when: true
+
+    - name: Install Docker engine and rootless extras
+      ansible.builtin.dnf:
+        name:
+          - containerd.io
+          - docker-ce
+          - docker-ce-cli
+          - docker-ce-rootless-extras
+          - fuse-overlayfs
+          - slirp4netns
+          - iptables
+          - shadow-utils
+        state: present
+
+    - name: Disable system-wide Docker
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        enabled: false
+        state: stopped
+        masked: true
+      loop:
+        - docker.service
+        - docker.socket
+
+    - name: Load nf_tables kernel module
+      ansible.builtin.command: modprobe nf_tables
+      changed_when: false
+
+    - name: Persist nf_tables on boot
+      ansible.builtin.copy:
+        dest: /etc/modules-load.d/nf_tables.conf
+        content: "nf_tables\n"
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Expose rootless DOCKER_HOST for login shells
+      ansible.builtin.copy:
+        dest: /etc/profile.d/box-dev-docker.sh
+        content: |
+          export DOCKER_HOST="unix:///run/user/$(id -u)/docker.sock"
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Configure rootless Docker for each user
+      ansible.builtin.include_tasks: docker-user.yml
+      loop: "{{ containerization_users }}"
+      loop_control:
+        loop_var: containerization_user
+        index_var: containerization_user_index

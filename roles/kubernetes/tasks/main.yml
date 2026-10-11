@@ -1,44 +1,86 @@
 ---
-- name: (Darwin) Ensure configured kuberentes packages are installed.
-  when: ansible_os_family == "Darwin"
-  homebrew:
-    name: "{{ item.name | default(item) }}"
-    install_options: "{{ item.install_options | default(omit) }}"
+- name: Check installed kubectl version
+  ansible.builtin.command: kubectl version --client --short
+  register: kubectl_installed_version
+  changed_when: false
+  failed_when: false
+
+- name: Get latest stable kubectl version
+  ansible.builtin.uri:
+    url: https://dl.k8s.io/release/stable.txt
+    return_content: true
+  register: kubectl_stable_version
+
+# Darwin
+- name: (Darwin) Install kubectl via Homebrew
+  community.general.homebrew:
+    name: kubectl
     state: present
-  loop: "{{ kubernetes_installed_packages }}"
+  when:
+    - ansible_os_family == "Darwin"
+    - kubectl_installed_version.rc != 0 or kubectl_stable_version.content | trim not in kubectl_installed_version.stdout
   notify:
     - Clear homebrew cache
 
-- name: (Debian/Ubuntu) Ensure configured kuberentes packages are installed
-  when: ansible_os_family == "Debian"
+# Linux
+- name: (Linux) Install kubectl via binary download
+  when:
+    - ansible_os_family in ["Debian", "RedHat"]
+    - kubectl_installed_version.rc != 0 or kubectl_stable_version.content | trim not in kubectl_installed_version.stdout
   block:
-    - name: Add an Apt signing key, uses whichever key is at the URL
-      become: yes
-      apt_key:
-        url: "{{ item.key | default(item) }}"
-        state: present
-      with_items: "{{ kuberentes_repository_packages }}"
+    - name: Download kubectl binary
+      ansible.builtin.get_url:
+        url: "https://dl.k8s.io/release/{{ kubectl_stable_version.content | trim }}/bin/linux/{{ common_arch }}/kubectl"
+        dest: /tmp/kubectl
+        mode: '0755'
 
-    - name: (Debian/Ubuntu) Ensure extra kubernetes repositores are installed
-      become: yes
-      apt_repository:
-        repo: "{{ item.repo | default(item) }}"
-        state: present
-        update_cache: yes
-      with_items: "{{ kuberentes_repository_packages }}"
+    - name: Install kubectl to /usr/local/bin
+      become: true
+      ansible.builtin.command: >
+        install -o root -g root -m 0755 /tmp/kubectl /usr/local/bin/kubectl
+      changed_when: true
 
-    - name: (Debian/Ubuntu) Ensure configured kubernetes packages are installed
-      become: yes
-      apt:
-        name: "{{ item.name | default(item) }}"
-        state: "{{ kubernetes_installed_packages_state }}"
-      loop: "{{ kubernetes_installed_packages }}"
+    - name: Cleanup kubectl temp file
+      ansible.builtin.file:
+        path: /tmp/kubectl
+        state: absent
 
-- name: Install velero
-  when: configure_velero
-  include_tasks: "velero-client.yml"
+# kubectl bash autocompletion
+- name: (Linux) Generate kubectl bash completion
+  become: true
+  ansible.builtin.shell: kubectl completion bash > /etc/bash_completion.d/kubectl
   args:
-    apply:
-      tags: ["velero"]
-  tags: ["velero"]
-  
+    creates: /etc/bash_completion.d/kubectl
+  when: ansible_os_family in ["Debian", "RedHat"]
+
+- name: (Linux) Ensure kubectl completion file is readable
+  become: true
+  ansible.builtin.file:
+    path: /etc/bash_completion.d/kubectl
+    mode: '0644'
+  when: ansible_os_family in ["Debian", "RedHat"]
+
+- name: (Darwin) Generate kubectl bash completion
+  ansible.builtin.shell: kubectl completion bash > /usr/local/etc/bash_completion.d/kubectl
+  args:
+    creates: /usr/local/etc/bash_completion.d/kubectl
+  when: ansible_os_family == "Darwin"
+
+- name: "Validate kubernetes extra CLI task file exists: {{ item }}"
+  delegate_to: localhost
+  ansible.builtin.stat:
+    path: "{{ role_path }}/tasks/{{ item }}-client.yml"
+  register: extra_cli_check
+  loop: "{{ kubernetes_extra_clis }}"
+
+- name: "Fail if kubernetes extra CLI task file is missing"
+  ansible.builtin.fail:
+    msg: "Extra CLI '{{ item.item }}' has no task file at {{ role_path }}/tasks/{{ item.item }}-client.yml"
+  when: not item.stat.exists
+  loop: "{{ extra_cli_check.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: "Install kubernetes extra CLI: {{ item }}"
+  ansible.builtin.include_tasks: "{{ item }}-client.yml"
+  loop: "{{ kubernetes_extra_clis }}"

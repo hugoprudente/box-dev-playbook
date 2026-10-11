@@ -1,0 +1,6 @@
+---
+- name: Install AI pip packages
+  ansible.builtin.include_tasks: pip.yml
+
+- name: Install Ollama and pull models
+  ansible.builtin.include_tasks: ollama.yml

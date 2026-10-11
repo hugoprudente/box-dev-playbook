@@ -1,0 +1,4 @@
+---
+krew_plugins:
+  - ctx
+  - ns

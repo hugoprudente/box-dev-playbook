@@ -1,7 +1,3 @@
 ---
-configure_velero: false
-
-velero_checksum:
-  linux: sha256:5dd1e619a3a182d539f081a468a8e6118d3a6c50436c36315bdb2e33b5398adf  # yamllint disable-line rule:line-length
-  darwin: sha256:4fde7533f90144c3e11462a7e305a8328d19d6b4c2ad7a91ce00d0819bd9ab15 # yamllint disable-line rule:line-length
-velero_version: "v1.7.1"
+velero_base_url: "https://github.com/vmware-tanzu/velero/releases/download"
+velero_releases_url: "https://api.github.com/repos/vmware-tanzu/velero/releases/latest"

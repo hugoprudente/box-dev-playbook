@@ -40,6 +40,8 @@ dotfiles_files:
     dest: .tmux.conf
   - orig: tmux/tmux.conf.local
     dest: .tmux.conf.local
+  - orig: starship.toml
+    dest: .config/starship.toml
 
 # Homebrew
 homebrew_taps:
@@ -61,10 +63,15 @@ homebrew_installed_packages:
   - htop
   - gpg
   - openssl
+  - make
   - neovim
   - ripgrep
   - node # used by neovim
   - tmux
+  - vault
+  - yq
+  - jq
+  - graphviz
   - podman
   - qemu
   - coreutils
@@ -93,59 +100,108 @@ npm_packages: []
 # - name: webpack
 #   state: present # present/absent/latest, default: present
 #   version: "^2.6" # default: N/A
+pip_default_state: present
+# Prefer the path set by the languages role (OS-resolved version). Fallback
+# below is only used when languages did not run.
+pip_default_executable: "{{ languages_python_pip_executable | default(ansible_user_dir ~ '/venv/python3.12/bin/pip') }}"
 pip_packages:
-  - name: ansible-lint
-    state: present # present/absent/latest, default: present
-    executable: "{{ lookup('ansible.builtin.env', 'HOME') }}/Environments/osx39/bin/pip3"
-    # version: "0.16.3" # default: N/A
+  - ansible-core
+  - ansible-lint
+  - python-openstackclient
+  - python-octaviaclient
 
 # Glob pattern to ansible task files to run after all other tasks are finished.
 post_provision_tasks: []
 
 # APT
+# Note: direnv + starship are not in default Ubuntu/Debian repos;
+# common role installs them via official scripts / GitHub binaries.
 apt_installed_packages:
   - pv
   - bat
+  - bash-completion
+  - make
   - neovim
   - htop
   - ripgrep
-  - direnv
   - tmux
-  - node
-  - podman
+  - unzip
+  - git
 
 # DNF
+# Note: direnv + starship are not in default CentOS/RHEL repos;
+# common role installs them via official scripts / GitHub binaries.
 dnf_installed_packages:
   - tmux
   - htop
+  - bash-completion
+  - make
   - neovim
-  - node
-  - podman
+  - unzip
+  - git
 
 
 # Shell configuration
 dotfiles_configure_ohmyzsh: false
 dotfiles_configure_bashit: false
-dotfiles_configure_starship: false
+dotfiles_configure_starship: true
+
+# Shell tools
+configure_funcoeszz: false
+funcoeszz_version: "21.1"
 
 # Kubernetes
-configure_kubernetes: false
+configure_kubernetes: true
 
-kuberentes_repository_packages:
-  - repo: "deb https://apt.kubernetes.io/ kubernetes-xenial main"
-    key: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-  - repo: "deb https://baltocdn.com/helm/stable/debian/ all main"
-    key: https://baltocdn.com/helm/signing.asc
-kubernetes_installed_packages:
+# K8S Extra CLIs
+kubernetes_extra_clis:
   - helm
-  - kubectl
+  - krew
+  - argocd
+  - cilium
+  - velero
 
-#K8S Addons
-configure_velero: false
+# Krew plugins
+krew_plugins:
+  - ctx
+  - ns
 
-# Containers
-configure_docker: false
-configure_podman: false
+# Containerization
+configure_containerization: true
+containerization_engine: podman
+
+# Languages
+# Python venvs live at ~/venv/python<version> for the targeted SSH user.
+# Same version re-run upgrades the venv; a new version creates a new directory.
+# version may be a string or a per-ansible_os_family map.
+configure_languages: true
+languages_venv_dirname: venv
+languages:
+  - name: python
+    version:
+      Debian: "3.9"
+      RedHat: "3.11"
+      Darwin: "3.12"
+      default: "3.12"
+    packages: []
+    extra_packages:
+      # Keep package names aligned with the OS-specific version above.
+      dnf:
+        - python3.11-numpy
+      apt:
+        - python3.12-numpy
+  - name: go
+    version: "1.17+"
+
+# AI
+configure_ai: true
+ai_pip_packages:
+  - torch
+  - torchvision
+  - transformers
+  - open-webui
+ai_ollama_models:
+  - deepseek-r1:1.5b
 
 #Terraform
 configure_terraform: false

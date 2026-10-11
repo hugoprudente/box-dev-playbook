@@ -1,0 +1,16 @@
+---
+- name: Set common arch and OS facts
+  ansible.builtin.set_fact:
+    common_arch: >-
+      {{ 'arm64' if ansible_architecture in ['aarch64', 'arm64'] else 'amd64' }}
+    common_os: >-
+      {{ 'darwin' if ansible_os_family == 'Darwin' else 'linux' }}
+
+- name: Create common base directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "~/.logs"
+    - "~/.config"

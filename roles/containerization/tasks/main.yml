@@ -1,0 +1,15 @@
+---
+- name: Select the container engine for this host
+  ansible.builtin.set_fact:
+    containerization_engine_selected: >-
+      {{ containerization_engine_debian if ansible_os_family == 'Debian' else containerization_engine }}
+
+- name: Report the container engine override
+  ansible.builtin.debug:
+    msg: >-
+      {{ ansible_distribution }} uses {{ containerization_engine_selected }}
+      instead of the requested {{ containerization_engine }}
+  when: containerization_engine_selected != containerization_engine
+
+- name: "Install container engine {{ containerization_engine_selected }}"
+  ansible.builtin.include_tasks: "{{ containerization_engine_selected }}.yml"

@@ -1,0 +1,52 @@
+---
+- name: krew version
+  ansible.builtin.shell: "{{ ansible_env.HOME }}/.krew/bin/kubectl-krew version"
+  register: krew_installed_version
+  changed_when: false
+  failed_when: false
+
+- name: Install krew
+  when: krew_installed_version.rc != 0
+  block:
+    - name: Download krew tarball
+      ansible.builtin.get_url:
+        url: "https://github.com/kubernetes-sigs/krew/releases/latest/download/krew-{{ common_os }}_{{ common_arch }}.tar.gz"
+        dest: "/tmp/krew-{{ common_os }}_{{ common_arch }}.tar.gz"
+        mode: '0644'
+
+    - name: Create krew temp directory
+      ansible.builtin.tempfile:
+        state: directory
+        prefix: krew_
+      register: krew_tmpdir
+
+    - name: Extract krew tarball
+      ansible.builtin.unarchive:
+        src: "/tmp/krew-{{ common_os }}_{{ common_arch }}.tar.gz"
+        dest: "{{ krew_tmpdir.path }}"
+        remote_src: true
+
+    - name: Install krew
+      ansible.builtin.command: "{{ krew_tmpdir.path }}/krew-{{ common_os }}_{{ common_arch }} install krew"
+      changed_when: true
+
+    - name: Cleanup krew temp files
+      ansible.builtin.file:
+        path: "{{ cleanup_item }}"
+        state: absent
+      loop:
+        - "/tmp/krew-{{ common_os }}_{{ common_arch }}.tar.gz"
+        - "{{ krew_tmpdir.path }}"
+      loop_control:
+        loop_var: cleanup_item
+
+- name: Install krew plugins
+  ansible.builtin.command: "{{ ansible_env.HOME }}/.krew/bin/kubectl-krew install {{ krew_plugin }}"
+  register: krew_plugin_result
+  changed_when: "'Installed plugin' in krew_plugin_result.stdout"
+  failed_when:
+    - krew_plugin_result.rc != 0
+    - "'already installed' not in krew_plugin_result.stderr"
+  loop: "{{ krew_plugins }}"
+  loop_control:
+    loop_var: krew_plugin

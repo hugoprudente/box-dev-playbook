@@ -1,0 +1,7 @@
+# Default personal Python virtualenv (managed by the languages role).
+# Each Python version lives at ~/venv/python3.X — selecting a new version
+# creates a sibling directory; re-running the same version upgrades packages.
+BOX_DEV_VENV="$HOME/{{ languages_venv_dirname }}/{{ languages_python_default_venv }}"
+if [ -d "$BOX_DEV_VENV/bin" ]; then
+    PATH="$BOX_DEV_VENV/bin:$PATH"
+fi
